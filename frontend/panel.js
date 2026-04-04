@@ -24,6 +24,10 @@
   var uploadForm = document.getElementById("panel-upload-form");
   var uploadMsg = document.getElementById("panel-upload-msg");
   var uploadList = document.getElementById("panel-upload-list");
+  var heroWelcome = document.getElementById("panel-hero-welcome");
+  var copyEmailBtn = document.getElementById("panel-copy-email");
+  var aboutCountEl = document.getElementById("panel-about-count");
+  var spotlight = document.getElementById("panel-spotlight");
 
   function esc(s) {
     if (s === null || s === undefined) return "";
@@ -58,6 +62,31 @@
       }
     } catch (e) {}
     return t.slice(0, 16);
+  }
+
+  function greetingLine() {
+    var h = new Date().getHours();
+    if (h >= 5 && h < 12) return "Sabahınız xeyir";
+    if (h >= 12 && h < 17) return "Gününüz xeyir";
+    if (h >= 17 && h < 22) return "Axşamınız xeyir";
+    return "Xoş gəldiniz";
+  }
+
+  function firstNameFromUser(fullName, email) {
+    var n = (fullName || "").trim();
+    if (n) {
+      var parts = n.split(/\s+/);
+      return parts[0];
+    }
+    if (email) return String(email).split("@")[0];
+    return "Səyahətçi";
+  }
+
+  function updateAboutCount() {
+    if (!aboutEl || !aboutCountEl) return;
+    var len = (aboutEl.value || "").length;
+    aboutCountEl.textContent =
+      len.toLocaleString("az-Latn") + " / 100 000 simvol";
   }
 
   function formatMemberSince(iso) {
@@ -178,6 +207,7 @@
         if (main) main.hidden = true;
         if (hero) hero.hidden = true;
         if (stats) stats.hidden = true;
+        if (spotlight) spotlight.hidden = true;
         window.location.href = "login.html";
         return;
       }
@@ -186,6 +216,7 @@
       if (main) main.hidden = false;
       if (hero) hero.hidden = false;
       if (stats) stats.hidden = false;
+      if (spotlight) spotlight.hidden = false;
       if (logoutBtn) {
         logoutBtn.hidden = false;
         if (navLogin) navLogin.hidden = true;
@@ -194,12 +225,48 @@
       if (nameEl) nameEl.textContent = u.full_name || "Səyahətçi";
       if (emailEl) emailEl.textContent = u.email || "";
       if (memberEl) memberEl.textContent = formatMemberSince(u.created_at);
+      if (heroWelcome) {
+        heroWelcome.textContent =
+          greetingLine() + ", " + firstNameFromUser(u.full_name, u.email) + "!";
+      }
       setAvatar(u.full_name, u.email);
 
       if (statBookings) statBookings.textContent = "…";
 
-      if (aboutEl) aboutEl.value = u.about_me || "";
+      if (aboutEl) {
+        aboutEl.value = u.about_me || "";
+        aboutEl.addEventListener("input", updateAboutCount);
+        updateAboutCount();
+      }
       renderPreview(u.about_me || "");
+
+      if (copyEmailBtn && emailEl) {
+        copyEmailBtn.addEventListener("click", function () {
+          var t = (emailEl.textContent || "").trim();
+          if (!t) return;
+          function done() {
+            copyEmailBtn.classList.add("is-done");
+            copyEmailBtn.innerHTML = '<span aria-hidden="true">✓</span>';
+            setTimeout(function () {
+              copyEmailBtn.classList.remove("is-done");
+              copyEmailBtn.innerHTML = '<span aria-hidden="true">📋</span>';
+            }, 1600);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(t).then(done).catch(function () {});
+          } else {
+            var ta = document.createElement("textarea");
+            ta.value = t;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+              document.execCommand("copy");
+              done();
+            } catch (e) {}
+            document.body.removeChild(ta);
+          }
+        });
+      }
 
       fetch("/api/me/bookings", { credentials: "same-origin" })
         .then(function (r) {
