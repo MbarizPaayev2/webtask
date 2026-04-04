@@ -64,6 +64,10 @@ app = Flask(__name__)
 # Təhlükəsizlik yaması: default olaraq təsadüfi gizli açar (Secret Key)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
 
+
+class DatabaseNotConfigured(Exception):
+    """DATABASE_URL yoxdur — Vercel-də Environment Variables lazımdır."""
+
 if _is_vercel_runtime():
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -97,6 +101,23 @@ def _api_500_json(e: Exception):
             500,
         )
     return e
+
+
+@app.errorhandler(DatabaseNotConfigured)
+def _handle_database_not_configured(_e: DatabaseNotConfigured):
+    return (
+        jsonify(
+            {
+                "ok": False,
+                "error": (
+                    "DATABASE_URL təyin edilməyib. Vercel: Project → Settings → "
+                    "Environment Variables → DATABASE_URL (Neon PostgreSQL connection string). "
+                    "Əlavə etdikdən sonra Redeploy edin."
+                ),
+            }
+        ),
+        503,
+    )
 
 
 DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip()
@@ -157,7 +178,7 @@ def get_db_postgres():
 
     dsn = _effective_database_url()
     if not dsn:
-        raise RuntimeError("DATABASE_URL təyin edilməyib — Vercel Environment Variables əlavə edin.")
+        raise DatabaseNotConfigured()
     kwargs: Dict[str, Any] = {"cursor_factory": RealDictCursor}
     if _is_vercel_runtime():
         kwargs["connect_timeout"] = 15
