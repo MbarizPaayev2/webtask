@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hesabım — Aviakassa</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="panel-page">
+  <a href="#panel-main" class="skip-link">Əsas məzmuna keç</a>
+
+  <div class="panel-shell">
+    <header class="panel-topbar">
+      <div class="panel-topbar__brand">
+        <a href="aviakassa.html" class="panel-topbar__logo">✈ Aviakassa</a>
+      </div>
+      <nav class="panel-topbar__nav" aria-label="Hesab menyusu">
+        <a href="aviakassa.html">Uçuş axtar</a>
+        <a href="panel.html" aria-current="page">Hesabım</a>
+        <a href="login.html" id="panel-nav-login">Giriş</a>
+        <button type="button" class="panel-topbar__logout" id="panel-logout" hidden>Çıxış</button>
+      </nav>
+    </header>
+
+    <div class="panel-hero" id="panel-hero" hidden>
+      <div class="panel-hero__avatar" id="panel-avatar" aria-hidden="true">?</div>
+      <div class="panel-hero__info">
+        <p class="panel-hero__eyebrow">Səyahətçi hesabı</p>
+        <h1 class="panel-hero__name" id="panel-user-name">—</h1>
+        <p class="panel-hero__email" id="panel-user-email">—</p>
+        <p class="panel-hero__meta">
+          <span class="panel-badge" id="panel-member-since">Üzv: —</span>
+        </p>
+      </div>
+      <div class="panel-hero__actions">
+        <a class="panel-btn panel-btn--primary" href="aviakassa.html">Yeni uçuş axtar</a>
+      </div>
+    </div>
+
+    <div class="panel-stats" id="panel-stats" hidden>
+      <div class="panel-stat">
+        <span class="panel-stat__value" id="stat-bookings">0</span>
+        <span class="panel-stat__label">Sifarişlər</span>
+      </div>
+      <div class="panel-stat">
+        <span class="panel-stat__value" id="stat-docs">0</span>
+        <span class="panel-stat__label">Sənədlər</span>
+      </div>
+      <div class="panel-stat panel-stat--accent">
+        <span class="panel-stat__value" id="stat-next">—</span>
+        <span class="panel-stat__label">Növbəti uçuş</span>
+      </div>
+    </div>
+
+    <main id="panel-main" class="panel-main" tabindex="-1" hidden>
+      <div class="panel-layout">
+        <section class="panel-card panel-card--wide" aria-labelledby="bookings-title">
+          <div class="panel-card__head">
+            <h2 id="bookings-title" class="panel-card__title">Səyahətlərim</h2>
+            <p class="panel-card__desc">Rezervasiyalarınız və ödəniş statusu</p>
+          </div>
+          <div id="panel-bookings-empty" class="panel-empty" hidden>
+            <p>Hələ aktiv sifariş yoxdur.</p>
+            <a href="aviakassa.html" class="panel-inline-link">Uçuş axtarın</a>
+          </div>
+          <div class="table-wrap table-wrap--rounded panel-table-wrap" id="panel-bookings-wrap" hidden>
+            <table class="data-table data-table--modern" id="panel-bookings-table">
+              <thead>
+                <tr>
+                  <th>Sifariş</th>
+                  <th>İstiqamət</th>
+                  <th>Uçuş tarixi</th>
+                  <th>Məbləğ</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="panel-bookings-body"></tbody>
+            </table>
+          </div>
+          <p id="panel-bookings-note" class="panel-note" hidden></p>
+        </section>
+
+        <aside class="panel-aside">
+          <section class="panel-card" aria-labelledby="prof-title">
+            <h2 id="prof-title" class="panel-card__title">Profil</h2>
+            <p class="panel-card__desc">İmza biletlərdə və hesabda göstərilə bilər</p>
+            <div class="form-group">
+              <label for="panel-about">İmza / qeyd</label>
+              <textarea id="panel-about" rows="4" placeholder="Qısa təqdimat…"></textarea>
+            </div>
+            <button type="button" class="panel-btn panel-btn--primary panel-btn--block" id="panel-save-about">Yadda saxla</button>
+            <p id="panel-about-msg" class="form-msg" role="alert"></p>
+            <h3 class="panel-card__subtitle">Önizləmə</h3>
+            <div id="panel-about-preview" class="panel-preview"></div>
+          </section>
+
+          <section class="panel-card" aria-labelledby="docs-title">
+            <h2 id="docs-title" class="panel-card__title">Sənədlər</h2>
+            <p class="panel-card__desc">Bilet nüsxəsi, şəxsiyyət, PDF (JPG, PNG, PDF)</p>
+            <form id="panel-upload-form" class="panel-upload-form">
+              <div class="form-group">
+                <label for="panel-file">Fayl seçin</label>
+                <input type="file" id="panel-file" name="file" accept=".pdf,.png,.jpg,.jpeg" />
+              </div>
+              <button type="submit" class="panel-btn panel-btn--secondary panel-btn--block">Yüklə</button>
+            </form>
+            <p id="panel-upload-msg" class="form-msg" role="alert"></p>
+            <ul id="panel-upload-list" class="panel-upload-list"></ul>
+          </section>
+
+          <section class="panel-card panel-card--muted" aria-labelledby="help-title">
+            <h2 id="help-title" class="panel-card__title">Dəstək</h2>
+            <p class="panel-help-text">
+              Dəyişiklik və geri ödəniş üçün sifariş nömrənizi dəstək xidmətinə bildirin.
+            </p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <p id="panel-guest" class="panel-guest-msg" hidden>
+      Daxil olmamısınız. <a href="login.html">Giriş səhifəsi</a>
+    </p>
+
+    <footer class="panel-footer">
+      <span>© Aviakassa</span>
+      <a href="aviakassa.html">Biletlər</a>
+    </footer>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

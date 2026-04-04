@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Əməliyyat mərkəzi — Aviakassa</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="admin-page">
+  <div class="admin-dashboard">
+    <header class="admin-hero">
+      <div class="admin-hero__top">
+        <a class="admin-hero__back" href="aviakassa.html">← Biletlər</a>
+        <span class="admin-hero__badge">Daxili hesabat</span>
+      </div>
+      <div class="admin-hero__brand">
+        <span class="admin-hero__icon" aria-hidden="true">✈</span>
+        <div>
+          <h1 class="admin-hero__title">Əməliyyat mərkəzi</h1>
+          <p class="admin-hero__subtitle">Reyslər, satışlar və sifariş sorğusu — vahid görünüş</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="admin-stats" id="admin-stats" aria-live="polite">
+      <div class="stat-card">
+        <span class="stat-card__value" id="stat-n-flights">—</span>
+        <span class="stat-card__label">Reyslər</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value" id="stat-n-trans">—</span>
+        <span class="stat-card__label">Əməliyyatlar</span>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <span class="stat-card__value" id="stat-sum">—</span>
+        <span class="stat-card__label">Ümumi dövriyyə (₼)</span>
+      </div>
+    </div>
+
+    <main class="admin-main">
+      <p id="admin-msg" class="admin-banner" role="alert" hidden></p>
+
+      <section class="admin-card" aria-labelledby="fl-title">
+        <div class="admin-card__head">
+          <h2 id="fl-title" class="admin-card__title">Reyslər</h2>
+          <p class="admin-card__desc">Aktiv istiqamətlər və mövcud yerlər</p>
+        </div>
+        <div class="table-shell">
+          <div class="table-wrap table-wrap--rounded">
+            <table class="data-table data-table--modern" id="admin-flights">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Reys</th>
+                  <th>Haradan</th>
+                  <th>Hara</th>
+                  <th>Tarix</th>
+                  <th>Qiymət</th>
+                  <th>Yerlər</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-card" aria-labelledby="tr-title">
+        <div class="admin-card__head">
+          <h2 id="tr-title" class="admin-card__title">Tranzaksiyalar</h2>
+          <p class="admin-card__desc">Son əməliyyatlar və statuslar</p>
+        </div>
+        <div class="table-shell">
+          <div class="table-wrap table-wrap--rounded">
+            <table class="data-table data-table--modern" id="admin-trans">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>İstifadəçi</th>
+                  <th>Reys</th>
+                  <th>Məbləğ</th>
+                  <th>Status</th>
+                  <th>Tarix</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-card admin-card--lookup">
+        <div class="admin-card__head">
+          <h2 class="admin-card__title">Sifariş sorğusu</h2>
+          <p class="admin-card__desc">Dəstək üçün sifariş nömrəsini daxil edin — cavab JSON formatındadır</p>
+        </div>
+        <div class="admin-lookup-row">
+          <input
+            type="number"
+            id="admin-tid"
+            min="1"
+            placeholder="Nömrə (məs: 1)"
+            class="admin-tid-input"
+            aria-label="Sifariş nömrəsi"
+          />
+          <button type="button" class="btn btn--admin-primary" id="admin-tid-go">Sorğula</button>
+        </div>
+        <pre id="admin-tid-out" class="admin-json" aria-live="polite"></pre>
+      </section>
+    </main>
+
+    <footer class="admin-footer">
+      <a href="aviakassa.html" class="admin-footer__link">Biletlərə qayıt</a>
+      <span class="admin-footer__meta">Aviakassa</span>
+    </footer>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
