@@ -75,7 +75,6 @@ WebSec/
 ├── api/index.py          # Vercel üçün Flask ixracı
 ├── backend/
 │   ├── app.py            # Əsas tətbiq
-│   ├── requirements.txt
 │   └── postgres_setup.sql
 ├── frontend/             # HTML, CSS, JS, şəkillər
 ├── uploads/              # Yükləmələr (lokal; git-ə düşmür)
@@ -92,7 +91,7 @@ Asılılıqlar:
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 ```
 
 Mühit dəyişənləri (`.env`):
@@ -335,7 +334,7 @@ Bu, yalnız lab mühitində SQLi payload ilə sınaq üçün məntiqlidir; isteh
                 "user": probe_user,
                 "session_created": False,
                 "query_probe": True,
-                "db": DB_MODE,
+                "db": "postgres",
                 "sql_fragment": frag,
             }
         )
@@ -357,7 +356,7 @@ def api_admin_reports():
     if session.get("email") != "admin@aviakassa.com":
         return jsonify({"ok": False, "error": "Bu səhifəyə daxil olmaq üçün admin hüququnuz yoxdur."}), 403
 
-    ok, data = admin_reports_data()
+    data = admin_reports_data()
 ```
 
 ### 6.5. IDOR-un müəyyən qədər aradan qaldırılması (müqayisə üçün)

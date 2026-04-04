@@ -31,7 +31,7 @@ Biletlər və istifadəçi hesabları ətrafında qurulmuş tamstack nümunə: s
    ```bash
    python -m venv .venv
    .venv\Scripts\activate
-   pip install -r backend/requirements.txt
+   pip install -r requirements.txt
    ```
 
 3. Layihə kökündə `.env` yaradın (nümunə üçün `.env.example`-a baxın):
@@ -61,7 +61,6 @@ WebSec/
 │   └── index.py            # Vercel serverless girişi (Flask app)
 ├── backend/
 │   ├── app.py              # Flask tətbiqi və API
-│   ├── requirements.txt
 │   └── postgres_setup.sql  # PostgreSQL sxemi (istəyə bağlı)
 ├── frontend/               # Statik HTML, CSS, JS (Flask tərəfindən verilir)
 ├── uploads/                # Yüklənmiş fayllar (lokal, git-ə düşmür)

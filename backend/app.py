@@ -7,7 +7,6 @@ Yalnız PostgreSQL (DATABASE_URL). İşə salmaq: python backend/app.py
 import os
 import sys
 import tempfile
-import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
@@ -130,9 +129,6 @@ if not DATABASE_URL:
     # Vercel serverless: import zamanı env bəzən yoxdur; layihə ayarlarında DATABASE_URL verin
     if not _is_vercel_runtime():
         sys.exit(1)
-
-DB_MODE = "postgres"
-
 
 def _effective_database_url() -> str:
     """Bulud Postgres (Neon, Supabase və s.) üçün SSL; Vercel-dən qoşulmada sslmode tez-tez lazımdır."""
@@ -473,7 +469,7 @@ def user_update_about_me(user_id: Any, about_me: str) -> bool:
     return True
 
 
-def admin_reports_data() -> Tuple[bool, Dict[str, Any]]:
+def admin_reports_data() -> Dict[str, Any]:
     """Bütün uçuşlar və tranzaksiyalar (hesabat üçün)."""
     conn = get_db_postgres()
     cur = conn.cursor()
@@ -496,7 +492,7 @@ def admin_reports_data() -> Tuple[bool, Dict[str, Any]]:
         d["created_at"] = _serialize_created_at(d.get("created_at"))
     cur.close()
     conn.close()
-    return True, {"flights": flights, "transactions": trans}
+    return {"flights": flights, "transactions": trans}
 
 
 def user_uploads_list(user_id: Any) -> List[Dict[str, Any]]:
@@ -512,7 +508,7 @@ def user_uploads_list(user_id: Any) -> List[Dict[str, Any]]:
     return rows
 
 
-def user_bookings_for_user(user_id: Any) -> Tuple[bool, List[Dict[str, Any]]]:
+def user_bookings_for_user(user_id: Any) -> List[Dict[str, Any]]:
     """Cari istifadəçinin tranzaksiya/rezervasiya siyahısı (panel üçün)."""
     conn = get_db_postgres()
     cur = conn.cursor()
@@ -535,7 +531,7 @@ def user_bookings_for_user(user_id: Any) -> Tuple[bool, List[Dict[str, Any]]]:
         out.append(d)
     cur.close()
     conn.close()
-    return True, out
+    return out
 
 
 @app.route("/api/register", methods=["POST"])
@@ -636,7 +632,7 @@ def api_login():
                 "user": probe_user,
                 "session_created": False,
                 "query_probe": True,
-                "db": DB_MODE,
+                "db": "postgres",
                 "sql_fragment": frag,
             }
         )
@@ -684,7 +680,7 @@ def api_me():
 def api_me_bookings():
     if "user_id" not in session:
         return jsonify({"ok": False, "error": "Daxil olun."}), 401
-    _ok, bookings = user_bookings_for_user(session["user_id"])
+    bookings = user_bookings_for_user(session["user_id"])
     return jsonify({"ok": True, "bookings": bookings})
 
 
@@ -719,7 +715,6 @@ def api_upload():
         
     # Təhlükəsizlik Yaması: Yalnız icazə verilən fayllar yüklənə bilər (XSS/RCE qorunması)
     allowed_extensions = {".png", ".jpg", ".jpeg", ".pdf"}
-    import os
     ext = os.path.splitext(unsafe_name)[1].lower()
     if ext not in allowed_extensions:
         return jsonify({"ok": False, "error": f"Faylın növünə icazə verilmir ({ext}). Yalnız JPG, PNG, PDF."}), 400
@@ -771,9 +766,7 @@ def api_admin_reports():
     if session.get("email") != "admin@aviakassa.com":
         return jsonify({"ok": False, "error": "Bu səhifəyə daxil olmaq üçün admin hüququnuz yoxdur."}), 403
 
-    ok, data = admin_reports_data()
-    if not ok:
-        return jsonify({"ok": True, **data})
+    data = admin_reports_data()
     return jsonify({"ok": True, **data})
 
 
