@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, send_from_directory, session
+from flask import Flask, Response, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 BACKEND_DIR = Path(__file__).resolve().parent
@@ -68,6 +68,36 @@ if _is_vercel_runtime():
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+
+@app.before_request
+def _api_options_preflight() -> Optional[Response]:
+    if request.method == "OPTIONS" and request.path.startswith("/api/"):
+        r = Response(status=204)
+        r.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS, DELETE"
+        r.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return r
+    return None
+
+
+@app.errorhandler(500)
+def _api_500_json(e: Exception):
+    """Görünməz 500-lərdə /api/* üçün JSON (HTML səhifə əvəzi)."""
+    if request.path.startswith("/api/"):
+        import traceback
+
+        traceback.print_exc()
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "Server xətası. Vercel Environment-də DATABASE_URL və deploy loglarını yoxlayın.",
+                }
+            ),
+            500,
+        )
+    return e
+
 
 DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip()
 if not DATABASE_URL:

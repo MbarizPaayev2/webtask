@@ -75,6 +75,34 @@
     return (s || "").trim();
   }
 
+  /** Vercel 502/HTML cavabında r.json() çökməsin — aydın xəta göstər */
+  function fetchJsonApi(url, options) {
+    return fetch(url, options).then(function (r) {
+      return r.text().then(function (text) {
+        var data;
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (parseErr) {
+            data = {
+              ok: false,
+              error:
+                "Server cavabı gözlənilməzdir (HTTP " +
+                r.status +
+                "). Deploy və DATABASE_URL yoxlayın.",
+            };
+          }
+        } else {
+          data = {
+            ok: false,
+            error: "Boş cavab (HTTP " + r.status + ").",
+          };
+        }
+        return { status: r.status, data: data };
+      });
+    });
+  }
+
   /* e-poçt: @ və domen hissəsi olsun */
   function emailDuzdur(email) {
     var e = trim(email);
@@ -178,17 +206,12 @@
         return;
       }
 
-      fetch("/api/login", {
+      fetchJsonApi("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify({ email: email, password: pw }),
       })
-        .then(function (r) {
-          return r.json().then(function (data) {
-            return { status: r.status, data: data };
-          });
-        })
         .then(function (res) {
           if (res.data.ok) {
             if (res.data.session_created === false) {
@@ -291,7 +314,7 @@
         return;
       }
 
-      fetch("/api/register", {
+      fetchJsonApi("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
@@ -302,11 +325,6 @@
           password_confirm: pw2,
         }),
       })
-        .then(function (r) {
-          return r.json().then(function (data) {
-            return { status: r.status, data: data };
-          });
-        })
         .then(function (res) {
           if (res.data.ok) {
             setAuthMsg(res.data.message || "Oldu.", false);
