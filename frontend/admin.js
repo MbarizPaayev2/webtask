@@ -31,6 +31,20 @@
     return t.slice(0, 16);
   }
 
+  function routeCell(city, country) {
+    var c = city != null && String(city).trim() ? String(city).trim() : "";
+    if (c) {
+      return (
+        "<strong>" +
+        esc(c) +
+        '</strong><br /><span class="table-cell-sub">' +
+        esc(country || "") +
+        "</span>"
+      );
+    }
+    return esc(country || "");
+  }
+
   function statusBadge(status) {
     var raw = String(status || "");
     var cls = "badge";
@@ -93,9 +107,9 @@
               "</td><td><strong>" +
               esc(f.code) +
               "</strong></td><td>" +
-              esc(f.from_country) +
+              routeCell(f.from_city, f.from_country) +
               "</td><td>" +
-              esc(f.to_country) +
+              routeCell(f.to_city, f.to_country) +
               "</td><td>" +
               esc(formatDateShort(f.flight_date)) +
               "</td><td>" +

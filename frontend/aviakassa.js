@@ -1,75 +1,90 @@
 /*
-  Aviakassa — forma üçün JavaScript
-  HTML faylında: <script src="aviakassa.js"></script>
-  Məqsəd: ölkə seçimi, tarix yoxlaması, göndərməni saxlamaq (səhifə yenilənməsin)
+  Aviakassa — ölkə + şəhər seçimi, tarix yoxlaması (real bilet saytı axını)
 */
 
 (function () {
-  /*
-    Bütün kod bu anonim funksiyanın içindədir.
-    Belə olanda dəyişənlər (var) qlobal scope-da görünmür — ad çakışması azalır.
-  */
-
-  // --- 1) Ünvan sətri (URL) ---
-  // Əvvəl form get ilə göndərilibsə ünvanda ?haradan=... kimi şeylər qala bilər.
-  // replaceState ilə ünvandan sorğu hissəsini (?) silirik, səhifə yenidən yüklənmir.
   if (window.location.search) {
     history.replaceState(null, "", window.location.pathname + window.location.hash);
   }
 
-  // --- 2) Ölkə siyahısı ---
-  // Haradan və Hara üçün <select> doldurulacaq; istifadəçi yalnız bu adlardan birini seçə bilər.
-  var OLKELER = [
-    "Azərbaycan",
-    "Türkiyə",
-    "Birləşmiş Ərəb Əmirlikləri",
-    "Qətər",
-    "Küveyt",
-    "Səudiyyə Ərəbistanı",
-    "İran",
-    "İraq",
-    "Gürcüstan",
-    "Rusiya",
-    "Ukrayna",
-    "Almaniya",
-    "Fransa",
-    "İtaliya",
-    "İspaniya",
-    "Birləşmiş Krallıq",
-    "ABŞ",
-    "Kanada",
-    "Çin",
-    "Yaponiya",
-    "Hindistan",
-    "Misir",
-    "Yunanistan",
-    "Kipr",
-    "İsveç",
-    "Niderland",
-    "Belçika",
-    "Avstraliya",
-    "Özbəkistan",
-    "Qazaxıstan",
-    "Türkmənistan",
-    "Polşa",
-    "Avstriya",
-    "İsveçrə"
-  ];
+  /** Ölkə adı → əsas şəhər / aeroportlar (nümunə siyahılar) */
+  var OLKE_SEHERLER = {
+    Azərbaycan: ["Bakı", "Gəncə", "Naxçıvan"],
+    Türkiyə: ["İstanbul", "Ankara", "İzmir", "Antalya", "Bodrum"],
+    "Birləşmiş Ərəb Əmirlikləri": ["Dubay", "Əbu-Dabi", "Şarja"],
+    Qətər: ["Doha"],
+    Küveyt: ["Küveyt şəhəri"],
+    "Səudiyyə Ərəbistanı": ["Riyad", "Ciddə", "Mədinə"],
+    İran: ["Tehran", "İsfahan", "Şiraz"],
+    İraq: ["Bağdad", "İrbil"],
+    Gürcüstan: ["Tbilisi", "Batumi", "Kutaisi"],
+    Rusiya: ["Moskva", "Sankt-Peterburq", "Soçi"],
+    Ukrayna: ["Kıyiv", "Lviv", "Odessa"],
+    Almaniya: ["Berlin", "Münhen", "Frankfurt", "Hamburq"],
+    Fransa: ["Paris", "Lyon", "Nitsa", "Marsel"],
+    İtaliya: ["Roma", "Milan", "Venesiya", "Neapol"],
+    İspaniya: ["Madrid", "Barselona", "Valensiya"],
+    "Birləşmiş Krallıq": ["London", "Mançester", "Edinburq"],
+    ABŞ: ["Nyu-York", "Los-Anceles", "Çikaqo", "Miami"],
+    Kanada: ["Toronto", "Vankuver", "Monreal"],
+    Çin: ["Pekin", "Şanqay", "Quançjou"],
+    Yaponiya: ["Tokio", "Osaka", "Kyoto"],
+    Hindistan: ["Dehli", "Mumbay", "Banqalor"],
+    Misir: ["Qahirə", "Şarm əş-Şeyx", "Lükser"],
+    Yunanistan: ["Afina", "Saloniki", "Krit"],
+    Kipr: ["Lefkoşa", "Larnaka", "Pafos"],
+    İsveç: ["Stokholm", "Gothenburq"],
+    Niderland: ["Amsterdam", "Rotterdam", "Haaqa"],
+    Belçika: ["Brüssel", "Antverpen"],
+    Avstraliya: ["Sidney", "Melburn", "Brisben"],
+    Özbəkistan: ["Daşkənd", "Səmərqənd", "Buxara"],
+    Qazaxıstan: ["Almatı", "Nur-Sultan", "Şımkent"],
+    Türkmənistan: ["Aşqabad", "Türkmenbaşı"],
+    Polşa: ["Varşava", "Krakov", "Qdansk"],
+    Avstriya: ["Vyana", "Salzburg", "İnsbruk"],
+    İsveçrə: ["Cenevrə", "Sürix", "Bern"],
+  };
 
-  // --- 3) DOM elementlərinə istinad ---
-  // getElementById — HTML-də id ilə işarələnmiş teqləri tapırıq
+  var OLKELER = [];
+  for (var k in OLKE_SEHERLER) {
+    if (Object.prototype.hasOwnProperty.call(OLKE_SEHERLER, k)) OLKELER.push(k);
+  }
+  OLKELER.sort(function (a, b) {
+    return a.localeCompare(b, "az");
+  });
+
   var form = document.getElementById("flight-search-form");
   var msgEl = document.getElementById("form-message");
   var summaryBox = document.getElementById("search-summary-box");
-  var elHaradan = document.getElementById("haradan");
-  var elHara = document.getElementById("hara");
+  var elHaradanOlke = document.getElementById("haradan-olke");
+  var elHaradanSeher = document.getElementById("haradan-seher");
+  var elHaraOlke = document.getElementById("hara-olke");
+  var elHaraSeher = document.getElementById("hara-seher");
   var elTarix = document.getElementById("tarix");
   var elSernisin = document.getElementById("sərnişin");
 
-  /*
-    select boş gəlir HTML-də; burada hər birinə əvvəlcə "boş seçim" (value=""),
-    sonra OLKELER massivindəki hər ölkə üçün <option> əlavə edirik.
-  */
+  function seherleriDoldur(sel, olke, bosMətn) {
+    sel.innerHTML = "";
+    sel.disabled = true;
+    sel.setAttribute("aria-disabled", "true");
+    var bos = document.createElement("option");
+    bos.value = "";
+    bos.textContent = bosMətn;
+    sel.appendChild(bos);
+    if (!olke || !OLKE_SEHERLER[olke]) {
+      return;
+    }
+    sel.disabled = false;
+    sel.removeAttribute("aria-disabled");
+    var arr = OLKE_SEHERLER[olke];
+    for (var i = 0; i < arr.length; i++) {
+      var o = document.createElement("option");
+      o.value = arr[i];
+      o.textContent = arr[i];
+      sel.appendChild(o);
+    }
+  }
+
   function olkeSecimleriniDoldur(sel, bosMətn) {
     var bos = document.createElement("option");
     bos.value = "";
@@ -83,17 +98,20 @@
     }
   }
 
-  olkeSecimleriniDoldur(elHaradan, "— Haradan ölkə seçin —");
-  olkeSecimleriniDoldur(elHara, "— Hara ölkə seçin —");
+  olkeSecimleriniDoldur(elHaradanOlke, "— Ölkə seçin —");
+  olkeSecimleriniDoldur(elHaraOlke, "— Ölkə seçin —");
+  seherleriDoldur(elHaradanSeher, "", "— Əvvəl ölkə seçin —");
+  seherleriDoldur(elHaraSeher, "", "— Əvvəl ölkə seçin —");
 
-  // type="date" üçün: keçmiş günləri seçmək olmasın — min atributu bu günə təyin olunur
-  // toISOString().split("T")[0] formatı YYYY-MM-DD verir (input date belə istəyir)
+  elHaradanOlke.addEventListener("change", function () {
+    seherleriDoldur(elHaradanSeher, elHaradanOlke.value, "— Şəhər seçin —");
+  });
+  elHaraOlke.addEventListener("change", function () {
+    seherleriDoldur(elHaraSeher, elHaraOlke.value, "— Şəhər seçin —");
+  });
+
   elTarix.min = new Date().toISOString().split("T")[0];
 
-  /*
-    innerHTML ilə yazanda istifadəçi mətni birbaşa HTML ola bilər (<script> və s.).
-    Bu funksiya &, <, > işarələrini escape edir ki, təhlükəsiz göstərilsin.
-  */
   function guvenliMətn(s) {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -101,15 +119,10 @@
       .replace(/>/g, "&gt;");
   }
 
-  // Başda və sonda olan boşluqları atırıq — "  Azərbaycan " → "Azərbaycan"
   function trimStr(s) {
     return (s || "").trim();
   }
 
-  /*
-    Göndərilən dəyər həqiqətən OLKELER massivində var mı?
-    (Brauzerdə value dəyişdirsə, yalnız siyahıdakı adlar keçərli sayılır.)
-  */
   function olkeSiyahindaVar(s) {
     var t = trimStr(s);
     if (!t) return false;
@@ -119,11 +132,17 @@
     return false;
   }
 
-  /*
-    tarix input-u "2026-04-06" kimi string verir.
-    Bunu Date-ə çevirib bu günün tarixilə müqayisə edirik (saatları sıfırlayırıq).
-    true = bu gün və ya gələcək
-  */
+  function seherSiyahindaVar(olke, seher) {
+    var t = trimStr(seher);
+    if (!t || !olke) return false;
+    var arr = OLKE_SEHERLER[olke];
+    if (!arr) return false;
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i] === t) return true;
+    }
+    return false;
+  }
+
   function tarixKecemediMi(isoDateStr) {
     if (!isoDateStr) return false;
     var sec = isoDateStr.split("-");
@@ -134,16 +153,15 @@
     return secilen.getTime() >= bugun.getTime();
   }
 
-  // Bütün input/select-lərdən qırmızı xəta çərçivəsini silirik
   function clearInputErrors() {
     var a = form.querySelectorAll(".input-error");
     for (var i = 0; i < a.length; i++) a[i].classList.remove("input-error");
   }
 
-  // form-message bölməsində mətn göstəririk; nov === "ok" yaşıl, deyilsə qırmızı stil
   function setMsg(text, nov) {
     msgEl.textContent = text;
-    msgEl.className = "form-msg form-grid--full-width is-visible " + (nov === "ok" ? "form-msg--ok" : "form-msg--error");
+    msgEl.className =
+      "form-msg form-grid--full-width is-visible " + (nov === "ok" ? "form-msg--ok" : "form-msg--error");
   }
 
   function hideMsg() {
@@ -151,19 +169,18 @@
     msgEl.className = "form-msg form-grid--full-width";
   }
 
-  // İstifadəçi seçimi dəyişəndə köhnə xəta çərçivəsi silinsin
   function secimXetasiniSil(sel) {
     sel.addEventListener("change", function () {
       sel.classList.remove("input-error");
     });
   }
 
-  secimXetasiniSil(elHaradan);
-  secimXetasiniSil(elHara);
+  secimXetasiniSil(elHaradanOlke);
+  secimXetasiniSil(elHaradanSeher);
+  secimXetasiniSil(elHaraOlke);
+  secimXetasiniSil(elHaraSeher);
 
-  // --- 4) Form göndərilməsi ---
   form.addEventListener("submit", function (e) {
-    // Brauzerin standart göndərməsini dayandırırıq — səhifə yenilənməsin, URL dəyişməsin
     e.preventDefault();
 
     clearInputErrors();
@@ -171,30 +188,42 @@
     summaryBox.hidden = true;
     summaryBox.textContent = "";
 
-    var haradan = trimStr(elHaradan.value);
-    var hara = trimStr(elHara.value);
+    var ho = trimStr(elHaradanOlke.value);
+    var hs = trimStr(elHaradanSeher.value);
+    var ko = trimStr(elHaraOlke.value);
+    var ks = trimStr(elHaraSeher.value);
     var tarix = elTarix.value;
 
-    // Haradan: boş olmamalı və siyahıdakı ölkə olmalıdır
-    if (!haradan || !olkeSiyahindaVar(haradan)) {
-      setMsg("«Haradan» üçün siyahıdan ölkə seçin.", "err");
-      elHaradan.classList.add("input-error");
-      elHaradan.focus();
+    if (!ho || !olkeSiyahindaVar(ho)) {
+      setMsg("«Haradan» üçün ölkə seçin.", "err");
+      elHaradanOlke.classList.add("input-error");
+      elHaradanOlke.focus();
+      return;
+    }
+    if (!hs || !seherSiyahindaVar(ho, hs)) {
+      setMsg("«Haradan» üçün şəhər seçin.", "err");
+      elHaradanSeher.classList.add("input-error");
+      elHaradanSeher.focus();
       return;
     }
 
-    if (!hara || !olkeSiyahindaVar(hara)) {
-      setMsg("«Hara» üçün siyahıdan ölkə seçin.", "err");
-      elHara.classList.add("input-error");
-      elHara.focus();
+    if (!ko || !olkeSiyahindaVar(ko)) {
+      setMsg("«Hara» üçün ölkə seçin.", "err");
+      elHaraOlke.classList.add("input-error");
+      elHaraOlke.focus();
+      return;
+    }
+    if (!ks || !seherSiyahindaVar(ko, ks)) {
+      setMsg("«Hara» üçün şəhər seçin.", "err");
+      elHaraSeher.classList.add("input-error");
+      elHaraSeher.focus();
       return;
     }
 
-    // Eyni ölkədən eyni ölkəyə uçuş axtarışı bu nümunədə qəbul etmirik
-    if (haradan === hara) {
-      setMsg("Çıxış və təyinat ölkəsi eyni ola bilməz.", "err");
-      elHara.classList.add("input-error");
-      elHara.focus();
+    if (ho === ko && hs === ks) {
+      setMsg("Çıxış və təyinat eyni şəhər ola bilməz.", "err");
+      elHaraSeher.classList.add("input-error");
+      elHaraSeher.focus();
       return;
     }
 
@@ -211,7 +240,6 @@
       return;
     }
 
-    // Sərnişin: 1, 2 və ya 3 — başqa dəyər olmamalı (normalda select-də yalnız bunlar var)
     var sernisin = elSernisin.value;
     if (sernisin !== "1" && sernisin !== "2" && sernisin !== "3") {
       setMsg("Sərnişin sayını düzgün seçin.", "err");
@@ -220,15 +248,17 @@
       return;
     }
 
-    // Bütün yoxlamalar keçdisə — uğur mesajı və xülasə bloku
     setMsg("Məlumatlar qəbul edildi. Aşağıda xülasə.", "ok");
     summaryBox.hidden = false;
+    var haradanSətir = guvenliMətn(hs) + ", " + guvenliMətn(ho);
+    var haraSətir = guvenliMətn(ks) + ", " + guvenliMətn(ko);
     summaryBox.innerHTML =
       "<strong>Axtarış xülasəsi</strong><br />" +
-      guvenliMətn(haradan) +
+      "<span class=\"search-summary__route\">" +
+      haradanSətir +
       " → " +
-      guvenliMətn(hara) +
-      "<br />Tarix: " +
+      haraSətir +
+      "</span><br />Tarix: " +
       guvenliMətn(tarix) +
       " · Sərnişin: " +
       guvenliMətn(sernisin) +

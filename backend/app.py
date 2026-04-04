@@ -223,6 +223,8 @@ def _migrate_postgres_extras():
             code TEXT NOT NULL,
             from_country TEXT NOT NULL,
             to_country TEXT NOT NULL,
+            from_city TEXT NOT NULL DEFAULT '',
+            to_city TEXT NOT NULL DEFAULT '',
             flight_date TEXT NOT NULL,
             price DOUBLE PRECISION NOT NULL,
             seats INTEGER NOT NULL DEFAULT 0
@@ -253,14 +255,26 @@ def _migrate_postgres_extras():
         """
     )
     conn.commit()
+    cur.execute("ALTER TABLE flights ADD COLUMN IF NOT EXISTS from_city TEXT NOT NULL DEFAULT ''")
+    cur.execute("ALTER TABLE flights ADD COLUMN IF NOT EXISTS to_city TEXT NOT NULL DEFAULT ''")
+    conn.commit()
     cur.execute("SELECT COUNT(*) AS c FROM flights")
     if (cur.fetchone() or {}).get("c", 0) == 0:
         cur.executemany(
-            "INSERT INTO flights (code, from_country, to_country, flight_date, price, seats) VALUES (%s,%s,%s,%s,%s,%s)",
+            "INSERT INTO flights (code, from_country, to_country, from_city, to_city, flight_date, price, seats) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
             [
-                ("J2-101", "Azərbaycan", "Türkiyə", "2026-05-12", 189.0, 42),
-                ("J2-204", "Türkiyə", "Qətər", "2026-05-18", 320.0, 18),
-                ("J2-330", "Azərbaycan", "BƏƏ", "2026-06-01", 410.0, 24),
+                ("J2-101", "Azərbaycan", "Türkiyə", "Bakı", "İstanbul", "2026-05-12", 189.0, 42),
+                ("J2-204", "Türkiyə", "Qətər", "İstanbul", "Doha", "2026-05-18", 320.0, 18),
+                (
+                    "J2-330",
+                    "Azərbaycan",
+                    "Birləşmiş Ərəb Əmirlikləri",
+                    "Bakı",
+                    "Dubay",
+                    "2026-06-01",
+                    410.0,
+                    24,
+                ),
             ],
         )
         conn.commit()
@@ -282,6 +296,20 @@ def _migrate_postgres_extras():
                     (uid, fids[1], 320.0, "gözləmədə"),
                 )
                 conn.commit()
+    # Köhnə deploy-larda şəhər sütunları boş ola bilər — nümunə reyslər yenilənir
+    cur.execute(
+        "UPDATE flights SET from_city=%s, to_city=%s WHERE code=%s",
+        ("Bakı", "İstanbul", "J2-101"),
+    )
+    cur.execute(
+        "UPDATE flights SET from_city=%s, to_city=%s WHERE code=%s",
+        ("İstanbul", "Doha", "J2-204"),
+    )
+    cur.execute(
+        "UPDATE flights SET from_city=%s, to_city=%s, to_country=%s WHERE code=%s",
+        ("Bakı", "Dubay", "Birləşmiş Ərəb Əmirlikləri", "J2-330"),
+    )
+    conn.commit()
     cur.close()
     conn.close()
 
@@ -474,7 +502,10 @@ def admin_reports_data() -> Dict[str, Any]:
     conn = get_db_postgres()
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, code, from_country, to_country, flight_date, price, seats FROM flights ORDER BY id"
+        """
+        SELECT id, code, from_country, to_country, from_city, to_city, flight_date, price, seats
+        FROM flights ORDER BY id
+        """
     )
     flights = [dict(x) for x in cur.fetchall()]
     cur.execute(
@@ -515,7 +546,8 @@ def user_bookings_for_user(user_id: Any) -> List[Dict[str, Any]]:
     cur.execute(
         """
         SELECT t.id, t.amount, t.status, t.created_at,
-               f.code AS flight_code, f.from_country, f.to_country, f.flight_date
+               f.code AS flight_code, f.from_country, f.to_country,
+               f.from_city, f.to_city, f.flight_date
         FROM transactions t
         JOIN flights f ON f.id = t.flight_id
         WHERE t.user_id = %s
@@ -781,6 +813,7 @@ def api_transaction_by_id(tid: int):
     cur.execute(
         """
         SELECT t.id, t.user_id, u.email AS user_email, t.flight_id, f.code AS flight_code,
+               f.from_country, f.to_country, f.from_city, f.to_city,
                t.amount, t.status, t.created_at
         FROM transactions t
         JOIN users u ON u.id = t.user_id

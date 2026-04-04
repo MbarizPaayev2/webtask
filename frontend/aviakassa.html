@@ -237,14 +237,22 @@
         <form id="flight-search-form" class="form-grid" action="#" method="post" novalidate>
           <!-- xəta/uğur mətni üçün -->
           <p id="form-message" class="form-msg form-grid--full-width" role="alert" aria-live="polite"></p>
-          <!-- ölkələr js-dən gəlir -->
+          <!-- ölkə + şəhər (real bilet saytları kimi) -->
           <div class="form-group">
-            <label for="haradan">Haradan (ölkə)</label>
-            <select id="haradan" name="haradan"></select>
+            <label for="haradan-olke">Haradan — ölkə</label>
+            <select id="haradan-olke" name="haradan-olke"></select>
           </div>
           <div class="form-group">
-            <label for="hara">Hara (ölkə)</label>
-            <select id="hara" name="hara"></select>
+            <label for="haradan-seher">Haradan — şəhər / aeroport</label>
+            <select id="haradan-seher" name="haradan-seher" disabled aria-disabled="true"></select>
+          </div>
+          <div class="form-group">
+            <label for="hara-olke">Hara — ölkə</label>
+            <select id="hara-olke" name="hara-olke"></select>
+          </div>
+          <div class="form-group">
+            <label for="hara-seher">Hara — şəhər / aeroport</label>
+            <select id="hara-seher" name="hara-seher" disabled aria-disabled="true"></select>
           </div>
           <!-- full width grid -->
           <div class="form-group form-grid--full-width">
@@ -273,13 +281,19 @@
         <h2 id="results-heading" class="results__title">Nümunə reyslər (demo)</h2>
 
         <article class="flight-row">
-          <div><strong>GYD → IST</strong><br />09:30 — birbaşa</div>
+          <div>
+            <strong>Bakı (GYD) → İstanbul (IST)</strong><br />
+            <span class="flight-row__sub">Azərbaycan → Türkiyə · 09:30 — birbaşa</span>
+          </div>
           <div>2 saat 15 dəq</div>
           <div><strong>₼ 189</strong>-dən</div>
         </article>
 
         <article class="flight-row">
-          <div><strong>GYD → DXB</strong><br />14:00 — birbaşa</div>
+          <div>
+            <strong>İstanbul (IST) → Dubay (DXB)</strong><br />
+            <span class="flight-row__sub">Türkiyə → BƏƏ · 14:00 — birbaşa</span>
+          </div>
           <div>3 saat 10 dəq</div>
           <div><strong>₼ 320</strong>-dən</div>
         </article>

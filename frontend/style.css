@@ -211,6 +211,25 @@ body {
   color: var(--color-primary);
 }
 
+.flight-row__sub {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.search-summary__route {
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.table-cell-sub {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .page-footer {
   text-align: center;
   padding: 2rem 1rem;

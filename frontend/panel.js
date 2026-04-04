@@ -34,6 +34,13 @@
       .replace(/"/g, "&quot;");
   }
 
+  function formatRoute(city, country) {
+    var c = city != null && String(city).trim() ? String(city).trim() : "";
+    var co = esc(country || "");
+    if (c) return esc(c) + ", " + co;
+    return co;
+  }
+
   function formatMoney(n) {
     var x = Number(n);
     if (isNaN(x)) return "—";
@@ -141,7 +148,8 @@
     }
     bookings.forEach(function (b) {
       var tr = document.createElement("tr");
-      var route = esc(b.from_country) + " → " + esc(b.to_country);
+      var route =
+        formatRoute(b.from_city, b.from_country) + " → " + formatRoute(b.to_city, b.to_country);
       tr.innerHTML =
         "<td><strong>#" +
         esc(b.id) +
