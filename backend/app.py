@@ -4,7 +4,6 @@ Aviakassa — Flask backend (login / register)
 Yalnız PostgreSQL (DATABASE_URL). İşə salmaq: python backend/app.py
 """
 
-import errno
 import os
 import sys
 import tempfile
@@ -22,12 +21,26 @@ PROJECT_ROOT = BACKEND_DIR.parent
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
 
+def _path_is_under_var_task(p: Path) -> bool:
+    """Vercel serverless paketi /var/task altındadır; PROJECT_ROOT.resolve() bəzən fərqli ola bilər."""
+    try:
+        p = p.resolve()
+    except OSError:
+        pass
+    parts = p.parts
+    # POSIX: ('/', 'var', 'task', ...)
+    return len(parts) >= 3 and parts[0] == "/" and parts[1] == "var" and parts[2] == "task"
+
+
 def _is_vercel_runtime() -> bool:
-    """Serverless (Vercel/Lambda): SSL, sessiya, /tmp upload, DB timeout.
-    Vercel bəzən VERCEL env vermir; kod həmişə /var/task altında yerləşir (read-only)."""
+    """Serverless (Vercel/Lambda): SSL, sessiya, /tmp upload, DB timeout."""
     if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
         return True
     if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        return True
+    if _path_is_under_var_task(Path(__file__)):
+        return True
+    if _path_is_under_var_task(PROJECT_ROOT):
         return True
     try:
         root = str(PROJECT_ROOT.resolve()).replace("\\", "/")
@@ -231,18 +244,26 @@ try:
 except Exception as ex:
     print("Postgres əlavə sxem xətası:", ex)
 
-try:
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-except OSError as ex:
-    # Linux EROFS=30: /var/task — env boş qalsa belə kökü düzəlt
-    if getattr(ex, "errno", None) == errno.EROFS:
-        UPLOAD_DIR = Path(tempfile.gettempdir()) / "aviakassa_uploads"
+def _ensure_upload_dir() -> None:
+    """Import zamanı çökməsin: layihə qovluğu read-only-dirsə /tmp istifadə olunur."""
+    global UPLOAD_DIR
+    tmp = Path(tempfile.gettempdir()) / "aviakassa_uploads"
+    try:
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as ex:
+        print(
+            "Upload qovluğu read-only və ya əlçatmaz; /tmp istifadə olunur:",
+            ex,
+            file=sys.stderr,
+        )
+        UPLOAD_DIR = tmp
         try:
             UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         except OSError as ex2:
             print("Upload qovluğu yaradılmadı:", ex2, file=sys.stderr)
-    else:
-        print("Upload qovluğu yaradılmadı (məs. read-only FS):", ex, file=sys.stderr)
+
+
+_ensure_upload_dir()
 
 
 def validate_email(email: str) -> bool:
