@@ -7,7 +7,8 @@ Biletlər və istifadəçi hesabları ətrafında qurulmuş tamstack nümunə: s
 - İstifadəçi **qeydiyyatı** və **girişi** (sessiya əsaslı)
 - **Uçuş axtarışı** interfeysi (`aviakassa.html`)
 - Giriş sonrası **şəxsi panel** (profil, yükləmələr, rezervasiyalar)
-- **İdarəetmə hesabatı** səhifəsi (admin konteksti)
+- **İdarəetmə hesabatı** səhifəsi (`admin.html`)
+- **Çoxdilli interfeys**: Azərbaycan, rus, ingilis (`frontend/lang.js`, `localStorage` açarı `aviakassa_lang`)
 
 ## Texnologiyalar
 
@@ -58,16 +59,19 @@ Sağlamlıq yoxlaması: `GET /api/health`
 ```
 WebSec/
 ├── api/
-│   └── index.py            # Vercel serverless girişi (Flask app)
+│   └── index.py            # Vercel serverless girişi (Flask app ixracı)
 ├── backend/
 │   ├── app.py              # Flask tətbiqi və API
-│   └── postgres_setup.sql  # PostgreSQL sxemi (istəyə bağlı)
-├── frontend/               # Statik HTML, CSS, JS (Flask tərəfindən verilir)
-├── uploads/                # Yüklənmiş fayllar (lokal, git-ə düşmür)
-├── requirements.txt        # Vercel üçün (kök)
-├── vercel.json             # Bütün sorğuları Flask-a yönləndirir
+│   ├── postgres_setup.sql
+│   └── neon_rebuild_public_schema.sql   # Neon üçün sxem (istəyə bağlı)
+├── frontend/               # HTML, CSS, JS, lang.js (Flask statik qovluğu)
+├── docs/report-screenshots/# Hesabat üçün demo şəkillər
+├── uploads/                # Lokal yükləmələr (git-ə düşmür; serverlessdə /tmp)
+├── requirements.txt
+├── vercel.json             # Sorğuları Flask serverless-ə yönləndirir
 ├── .env.example
-└── README.md
+├── README.md
+└── REPORT.md               # Kurs hesabatı (əlavə)
 ```
 
 ## Vercel ilə deploy (frontend + backend birlikdə)
