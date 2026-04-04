@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Əməliyyat mərkəzi — Aviakassa</title>
+  <title data-i18n="title_admin">Əməliyyat mərkəzi — Aviakassa</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="admin-page">
   <div class="admin-dashboard">
     <header class="admin-hero">
       <div class="admin-hero__top">
-        <a class="admin-hero__back" href="aviakassa.html">← Biletlər</a>
-        <span class="admin-hero__badge">Daxili hesabat</span>
+        <a class="admin-hero__back" href="aviakassa.html" data-i18n="adm_back">← Biletlər</a>
+        <div class="admin-hero__top-right">
+          <span class="admin-hero__badge" data-i18n="adm_badge">Daxili hesabat</span>
+          <div class="lang-switch lang-switch--on-dark" role="group" data-i18n-aria="lang_aria">
+            <button type="button" class="lang-switch__btn is-active" data-set-lang="az" aria-pressed="true">AZ</button>
+            <button type="button" class="lang-switch__btn" data-set-lang="ru" aria-pressed="false">RU</button>
+            <button type="button" class="lang-switch__btn" data-set-lang="en" aria-pressed="false">EN</button>
+          </div>
+        </div>
       </div>
       <div class="admin-hero__brand">
         <span class="admin-hero__icon" aria-hidden="true">✈</span>
         <div>
-          <h1 class="admin-hero__title">Əməliyyat mərkəzi</h1>
-          <p class="admin-hero__subtitle">Reyslər, satışlar və sifariş sorğusu — vahid görünüş</p>
+          <h1 class="admin-hero__title" data-i18n="adm_hero_title">Əməliyyat mərkəzi</h1>
+          <p class="admin-hero__subtitle" data-i18n="adm_hero_sub">Reyslər, satışlar və sifariş sorğusu — vahid görünüş</p>
         </div>
       </div>
     </header>
@@ -25,15 +32,15 @@
     <div class="admin-stats" id="admin-stats" aria-live="polite">
       <div class="stat-card">
         <span class="stat-card__value" id="stat-n-flights">—</span>
-        <span class="stat-card__label">Reyslər</span>
+        <span class="stat-card__label" data-i18n="adm_stat_flights">Reyslər</span>
       </div>
       <div class="stat-card">
         <span class="stat-card__value" id="stat-n-trans">—</span>
-        <span class="stat-card__label">Əməliyyatlar</span>
+        <span class="stat-card__label" data-i18n="adm_stat_trans">Əməliyyatlar</span>
       </div>
       <div class="stat-card stat-card--accent">
         <span class="stat-card__value" id="stat-sum">—</span>
-        <span class="stat-card__label">Ümumi dövriyyə (₼)</span>
+        <span class="stat-card__label" data-i18n="adm_stat_sum">Ümumi dövriyyə (₼)</span>
       </div>
     </div>
 
@@ -42,21 +49,21 @@
 
       <section class="admin-card" aria-labelledby="fl-title">
         <div class="admin-card__head">
-          <h2 id="fl-title" class="admin-card__title">Reyslər</h2>
-          <p class="admin-card__desc">Aktiv istiqamətlər və mövcud yerlər</p>
+          <h2 id="fl-title" class="admin-card__title" data-i18n="adm_flights_title">Reyslər</h2>
+          <p class="admin-card__desc" data-i18n="adm_flights_desc">Aktiv istiqamətlər və mövcud yerlər</p>
         </div>
         <div class="table-shell">
           <div class="table-wrap table-wrap--rounded">
             <table class="data-table data-table--modern" id="admin-flights">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Reys</th>
-                  <th>Haradan</th>
-                  <th>Hara</th>
-                  <th>Tarix</th>
-                  <th>Qiymət</th>
-                  <th>Yerlər</th>
+                  <th data-i18n="adm_th_id">ID</th>
+                  <th data-i18n="adm_th_flight">Reys</th>
+                  <th data-i18n="adm_th_from">Haradan</th>
+                  <th data-i18n="adm_th_to">Hara</th>
+                  <th data-i18n="adm_th_date">Tarix</th>
+                  <th data-i18n="adm_th_price">Qiymət</th>
+                  <th data-i18n="adm_th_seats">Yerlər</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -67,20 +74,20 @@
 
       <section class="admin-card" aria-labelledby="tr-title">
         <div class="admin-card__head">
-          <h2 id="tr-title" class="admin-card__title">Tranzaksiyalar</h2>
-          <p class="admin-card__desc">Son əməliyyatlar və statuslar</p>
+          <h2 id="tr-title" class="admin-card__title" data-i18n="adm_trans_title">Tranzaksiyalar</h2>
+          <p class="admin-card__desc" data-i18n="adm_trans_desc">Son əməliyyatlar və statuslar</p>
         </div>
         <div class="table-shell">
           <div class="table-wrap table-wrap--rounded">
             <table class="data-table data-table--modern" id="admin-trans">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>İstifadəçi</th>
-                  <th>Reys</th>
-                  <th>Məbləğ</th>
-                  <th>Status</th>
-                  <th>Tarix</th>
+                  <th data-i18n="adm_th_id">ID</th>
+                  <th data-i18n="adm_th_user">İstifadəçi</th>
+                  <th data-i18n="adm_th_flight">Reys</th>
+                  <th data-i18n="adm_th_amount">Məbləğ</th>
+                  <th data-i18n="adm_th_status">Status</th>
+                  <th data-i18n="adm_th_date">Tarix</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -91,30 +98,33 @@
 
       <section class="admin-card admin-card--lookup">
         <div class="admin-card__head">
-          <h2 class="admin-card__title">Sifariş sorğusu</h2>
-          <p class="admin-card__desc">Dəstək üçün sifariş nömrəsini daxil edin — cavab JSON formatındadır</p>
+          <h2 class="admin-card__title" data-i18n="adm_lookup_title">Sifariş sorğusu</h2>
+          <p class="admin-card__desc" data-i18n="adm_lookup_desc">Dəstək üçün sifariş nömrəsini daxil edin — cavab JSON formatındadır</p>
         </div>
         <div class="admin-lookup-row">
           <input
             type="number"
             id="admin-tid"
             min="1"
+            data-i18n-placeholder="adm_tid_ph"
             placeholder="Nömrə (məs: 1)"
             class="admin-tid-input"
+            data-i18n-aria="adm_tid_aria"
             aria-label="Sifariş nömrəsi"
           />
-          <button type="button" class="btn btn--admin-primary" id="admin-tid-go">Sorğula</button>
+          <button type="button" class="btn btn--admin-primary" id="admin-tid-go" data-i18n="adm_tid_btn">Sorğula</button>
         </div>
         <pre id="admin-tid-out" class="admin-json" aria-live="polite"></pre>
       </section>
     </main>
 
     <footer class="admin-footer">
-      <a href="aviakassa.html" class="admin-footer__link">Biletlərə qayıt</a>
-      <span class="admin-footer__meta">Aviakassa</span>
+      <a href="aviakassa.html" class="admin-footer__link" data-i18n="adm_footer_back">Biletlərə qayıt</a>
+      <span class="admin-footer__meta" data-i18n="adm_footer_meta">Aviakassa</span>
     </footer>
   </div>
 
+  <script src="lang.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

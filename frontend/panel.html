@@ -3,22 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hesabım — Aviakassa</title>
+  <title data-i18n="page_title">Hesabım — Aviakassa</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="panel-page">
-  <a href="#panel-main" class="skip-link">Əsas məzmuna keç</a>
+  <a href="#panel-main" class="skip-link" data-i18n="skip_main">Əsas məzmuna keç</a>
 
   <div class="panel-shell">
     <header class="panel-topbar">
       <div class="panel-topbar__brand">
         <a href="aviakassa.html" class="panel-topbar__logo">✈ Aviakassa</a>
       </div>
-      <nav class="panel-topbar__nav" aria-label="Hesab menyusu">
-        <a href="aviakassa.html">Uçuş axtar</a>
-        <a href="panel.html" aria-current="page">Hesabım</a>
-        <a href="login.html" id="panel-nav-login">Giriş</a>
-        <button type="button" class="panel-topbar__logout" id="panel-logout" hidden>Çıxış</button>
+      <div class="lang-switch" role="group" data-i18n-aria="lang_aria">
+        <button type="button" class="lang-switch__btn is-active" data-set-lang="az" aria-pressed="true">AZ</button>
+        <button type="button" class="lang-switch__btn" data-set-lang="ru" aria-pressed="false">RU</button>
+        <button type="button" class="lang-switch__btn" data-set-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <nav class="panel-topbar__nav" data-i18n-aria="nav_aria" aria-label="Hesab menyusu">
+        <a href="aviakassa.html" data-i18n="nav_search">Uçuş axtar</a>
+        <a href="panel.html" aria-current="page" data-i18n="nav_account">Hesabım</a>
+        <a href="login.html" id="panel-nav-login" data-i18n="nav_login">Giriş</a>
+        <button type="button" class="panel-topbar__logout" id="panel-logout" hidden data-i18n="nav_logout">Çıxış</button>
       </nav>
     </header>
 
@@ -30,23 +35,31 @@
         </div>
         <div class="panel-hero__info">
           <p class="panel-hero__welcome" id="panel-hero-welcome">—</p>
-          <p class="panel-hero__eyebrow">Şəxsi kabinet · səyahətçi profili</p>
+          <p class="panel-hero__eyebrow" data-i18n="hero_eyebrow">Şəxsi kabinet · səyahətçi profili</p>
           <h1 class="panel-hero__name" id="panel-user-name">—</h1>
           <div class="panel-hero__email-row">
             <span class="panel-hero__email" id="panel-user-email">—</span>
-            <button type="button" class="panel-icon-btn" id="panel-copy-email" title="E-poçtu mübadiləyə kopyala" aria-label="E-poçtu kopyala">
+            <button
+              type="button"
+              class="panel-icon-btn"
+              id="panel-copy-email"
+              data-i18n-title="copy_title"
+              data-i18n-aria="copy_aria"
+              title="E-poçtu mübadiləyə kopyala"
+              aria-label="E-poçtu kopyala"
+            >
               <span aria-hidden="true">📋</span>
             </button>
           </div>
           <p class="panel-hero__meta">
             <span class="panel-badge" id="panel-member-since">Üzv: —</span>
-            <span class="panel-badge panel-badge--outline" id="panel-status-badge">Hesab aktivdir</span>
+            <span class="panel-badge panel-badge--outline" id="panel-status-badge" data-i18n="badge_active">Hesab aktivdir</span>
           </p>
         </div>
         <div class="panel-hero__actions">
           <a class="panel-btn panel-btn--primary" href="aviakassa.html">
             <span class="panel-btn__ic" aria-hidden="true">🔍</span>
-            Yeni uçuş axtar
+            <span data-i18n="search_new">Yeni uçuş axtar</span>
           </a>
         </div>
       </div>
@@ -57,37 +70,37 @@
         <span class="panel-stat__ic" aria-hidden="true">🧾</span>
         <div class="panel-stat__body">
           <span class="panel-stat__value" id="stat-bookings">0</span>
-          <span class="panel-stat__label">Sifariş və rezervasiya</span>
+          <span class="panel-stat__label" data-i18n="stat_bookings">Sifariş və rezervasiya</span>
         </div>
       </div>
       <div class="panel-stat panel-stat--icon">
         <span class="panel-stat__ic" aria-hidden="true">📎</span>
         <div class="panel-stat__body">
           <span class="panel-stat__value" id="stat-docs">0</span>
-          <span class="panel-stat__label">Yüklənmiş sənəd</span>
+          <span class="panel-stat__label" data-i18n="stat_docs">Yüklənmiş sənəd</span>
         </div>
       </div>
       <div class="panel-stat panel-stat--icon panel-stat--accent">
         <span class="panel-stat__ic" aria-hidden="true">✈</span>
         <div class="panel-stat__body">
           <span class="panel-stat__value" id="stat-next">—</span>
-          <span class="panel-stat__label">Növbəti uçuş tarixi</span>
+          <span class="panel-stat__label" data-i18n="stat_next">Növbəti uçuş tarixi</span>
         </div>
       </div>
     </div>
 
-    <div class="panel-spotlight" id="panel-spotlight" hidden aria-label="Qısa məsləhətlər">
+    <div class="panel-spotlight" id="panel-spotlight" hidden data-i18n-aria="spot_aria" aria-label="Qısa məsləhətlər">
       <div class="panel-spotlight__item">
-        <strong>Check-in</strong>
-        <span>Çox vaxt uçuşdan 24 saat əvvəl onlayn açılır — reys kodunu yoxlayın.</span>
+        <strong data-i18n="spot1_t">Check-in</strong>
+        <span data-i18n="spot1_d">Çox vaxt uçuşdan 24 saat əvvəl onlayn açılır — reys kodunu yoxlayın.</span>
       </div>
       <div class="panel-spotlight__item">
-        <strong>Sənədlər</strong>
-        <span>Bilet və şəxsiyyət nüsxələrini təhlükəsiz saxlamaq üçün PDF yükləyin.</span>
+        <strong data-i18n="spot2_t">Sənədlər</strong>
+        <span data-i18n="spot2_d">Bilet və şəxsiyyət nüsxələrini təhlükəsiz saxlamaq üçün PDF yükləyin.</span>
       </div>
       <div class="panel-spotlight__item">
-        <strong>Profil</strong>
-        <span>İmza mətni bəzi biletlərdə və hesab kartında göstərilə bilər.</span>
+        <strong data-i18n="spot3_t">Profil</strong>
+        <span data-i18n="spot3_d">İmza mətni bəzi biletlərdə və hesab kartında göstərilə bilər.</span>
       </div>
     </div>
 
@@ -98,26 +111,28 @@
             <div>
               <h2 id="bookings-title" class="panel-card__title">
                 <span class="panel-card__title-ic" aria-hidden="true">🗓</span>
-                Səyahətlərim
+                <span data-i18n="bookings_title">Səyahətlərim</span>
               </h2>
-              <p class="panel-card__desc">Rezervasiyalar, istiqamət və ödəniş statusu — bütün sifarişlər bir cədvəldə.</p>
+              <p class="panel-card__desc" data-i18n="bookings_desc">
+                Rezervasiyalar, istiqamət və ödəniş statusu — bütün sifarişlər bir cədvəldə.
+              </p>
             </div>
           </div>
           <div id="panel-bookings-empty" class="panel-empty panel-empty--rich" hidden>
             <div class="panel-empty__visual" aria-hidden="true">✈</div>
-            <p class="panel-empty__title">Hələ sifariş yoxdur</p>
-            <p class="panel-empty__text">İlk uçuşunuzu seçin — istiqamət və tarix ilə axtarış edin.</p>
-            <a href="aviakassa.html" class="panel-btn panel-btn--primary panel-btn--inline">Uçuş axtarışına keç</a>
+            <p class="panel-empty__title" data-i18n="empty_title">Hələ sifariş yoxdur</p>
+            <p class="panel-empty__text" data-i18n="empty_text">İlk uçuşunuzu seçin — istiqamət və tarix ilə axtarış edin.</p>
+            <a href="aviakassa.html" class="panel-btn panel-btn--primary panel-btn--inline" data-i18n="empty_btn">Uçuş axtarışına keç</a>
           </div>
           <div class="table-wrap table-wrap--rounded panel-table-wrap" id="panel-bookings-wrap" hidden>
             <table class="data-table data-table--modern data-table--hover" id="panel-bookings-table">
               <thead>
                 <tr>
-                  <th>Sifariş</th>
-                  <th>İstiqamət</th>
-                  <th>Uçuş tarixi</th>
-                  <th>Məbləğ</th>
-                  <th>Status</th>
+                  <th data-i18n="th_order">Sifariş</th>
+                  <th data-i18n="th_route">İstiqamət</th>
+                  <th data-i18n="th_date">Uçuş tarixi</th>
+                  <th data-i18n="th_amount">Məbləğ</th>
+                  <th data-i18n="th_status">Status</th>
                 </tr>
               </thead>
               <tbody id="panel-bookings-body"></tbody>
@@ -131,26 +146,29 @@
             <div class="panel-card__head">
               <h2 id="prof-title" class="panel-card__title">
                 <span class="panel-card__title-ic" aria-hidden="true">👤</span>
-                Profil və imza
+                <span data-i18n="profile_title">Profil və imza</span>
               </h2>
-              <p class="panel-card__desc">
+              <p class="panel-card__desc" data-i18n="profile_desc">
                 Bu mətn biletlərdə və hesab kartında göstərilə bilər. HTML təhlükəsiz şəkildə təmizlənir.
               </p>
             </div>
             <div class="form-group">
-              <label for="panel-about">Qısa təqdimat / imza</label>
+              <label for="panel-about" data-i18n="label_about">Qısa təqdimat / imza</label>
               <textarea
                 id="panel-about"
                 class="panel-textarea"
                 rows="5"
                 maxlength="100000"
+                data-i18n-placeholder="ph_about"
                 placeholder="Məsələn: adınız, üstünlük verdiyiniz oturacaq və ya xüsusi istəklər…"
               ></textarea>
               <p class="panel-char-hint" id="panel-about-count" aria-live="polite">0 / 100 000 simvol</p>
             </div>
-            <button type="button" class="panel-btn panel-btn--primary panel-btn--block" id="panel-save-about">Dəyişiklikləri saxla</button>
+            <button type="button" class="panel-btn panel-btn--primary panel-btn--block" id="panel-save-about" data-i18n="save_btn">
+              Dəyişiklikləri saxla
+            </button>
             <p id="panel-about-msg" class="form-msg" role="alert"></p>
-            <h3 class="panel-card__subtitle">Canlı önizləmə</h3>
+            <h3 class="panel-card__subtitle" data-i18n="preview_title">Canlı önizləmə</h3>
             <div id="panel-about-preview" class="panel-preview panel-preview--card"></div>
           </section>
 
@@ -158,24 +176,24 @@
             <div class="panel-card__head">
               <h2 id="docs-title" class="panel-card__title">
                 <span class="panel-card__title-ic" aria-hidden="true">📁</span>
-                Sənədlər
+                <span data-i18n="docs_title">Sənədlər</span>
               </h2>
-              <p class="panel-card__desc">Bilet nüsxəsi, şəxsiyyət və ya PDF — təhlükəsiz saxlanılır.</p>
+              <p class="panel-card__desc" data-i18n="docs_desc">Bilet nüsxəsi, şəxsiyyət və ya PDF — təhlükəsiz saxlanılır.</p>
             </div>
             <form id="panel-upload-form" class="panel-upload-form">
               <div class="form-group">
-                <label for="panel-file">Fayl seçin</label>
+                <label for="panel-file" data-i18n="file_label">Fayl seçin</label>
                 <input type="file" id="panel-file" name="file" accept=".pdf,.png,.jpg,.jpeg" class="panel-file-input" />
               </div>
-              <button type="submit" class="panel-btn panel-btn--secondary panel-btn--block">Yüklə</button>
+              <button type="submit" class="panel-btn panel-btn--secondary panel-btn--block" data-i18n="upload_btn">Yüklə</button>
             </form>
             <p id="panel-upload-msg" class="form-msg" role="alert"></p>
             <ul id="panel-upload-list" class="panel-upload-list"></ul>
           </section>
 
           <section class="panel-card panel-card--muted" aria-labelledby="help-title">
-            <h2 id="help-title" class="panel-card__title">Dəstək</h2>
-            <p class="panel-help-text">
+            <h2 id="help-title" class="panel-card__title" data-i18n="help_title">Dəstək</h2>
+            <p class="panel-help-text" data-i18n-html="help_html">
               Dəyişiklik və ya geri ödəniş üçün <strong>sifariş nömrənizi</strong> dəstək xidmətinə bildirin. Cavab müddəti adətən 1–2 iş günü.
             </p>
           </section>
@@ -183,16 +201,17 @@
       </div>
     </main>
 
-    <p id="panel-guest" class="panel-guest-msg" hidden>
+    <p id="panel-guest" class="panel-guest-msg" hidden data-i18n-html="guest_html">
       Daxil olmamısınız. <a href="login.html">Giriş səhifəsi</a>
     </p>
 
     <footer class="panel-footer">
-      <span>© Aviakassa</span>
-      <a href="aviakassa.html">Biletlər</a>
+      <span data-i18n="footer_copy">© Aviakassa</span>
+      <a href="aviakassa.html" data-i18n="footer_tickets">Biletlər</a>
     </footer>
   </div>
 
+  <script src="lang.js"></script>
   <script src="panel.js"></script>
 </body>
 </html>

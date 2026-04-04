@@ -1,6 +1,10 @@
 /* Login və qeydiyyat — validasiya + API */
 
 (function () {
+  function T(k, map) {
+    return window.AviakassaLang ? AviakassaLang.t(k, map) : k;
+  }
+
   var msgEl = document.getElementById("auth-message");
   var formLogin = document.getElementById("login-form");
   var formRegister = document.getElementById("register-form");
@@ -63,7 +67,7 @@
     el.innerHTML = "";
     el.className = "login-pg-result login-pg-result--db-leak";
     el.setAttribute("role", "alert");
-    el.setAttribute("aria-label", "Verilənlər bazası xətası");
+    el.setAttribute("aria-label", T("auth_probe_aria"));
 
     var pre = document.createElement("pre");
     pre.className = "login-pg-result__leak";
@@ -86,16 +90,13 @@
           } catch (parseErr) {
             data = {
               ok: false,
-              error:
-                "Server cavabı gözlənilməzdir (HTTP " +
-                r.status +
-                "). Deploy və DATABASE_URL yoxlayın.",
+              error: T("auth_fetch_bad", { status: r.status }),
             };
           }
         } else {
           data = {
             ok: false,
-            error: "Boş cavab (HTTP " + r.status + ").",
+            error: T("auth_fetch_empty", { status: r.status }),
           };
         }
         return { status: r.status, data: data };
@@ -113,17 +114,17 @@
     return dom.indexOf(".") >= 0;
   }
 
-  /* qeydiyyat parolu: min 8, hərf + rəqəm */
+  /* qeydiyyat parolu: min 8, hərf + rəqəm — qaytarır: boş və ya tərcümə açarı */
   function parolQeydiyyat(pw) {
-    if (!pw || pw.length < 8) return "Hesab parolu ən azı 8 simvol olmalıdır.";
+    if (!pw || pw.length < 8) return "auth_pw_short";
     var herf = false;
     var reqem = false;
     for (var i = 0; i < pw.length; i++) {
       if (/[a-zA-ZəöüğışçƏÖÜĞİŞÇ]/.test(pw[i])) herf = true;
       if (/\d/.test(pw[i])) reqem = true;
     }
-    if (!herf) return "Parolda ən azı bir hərf olmalıdır (təhlükəsizlik tələbi).";
-    if (!reqem) return "Parolda ən azı bir rəqəm olmalıdır (təhlükəsizlik tələbi).";
+    if (!herf) return "auth_pw_no_letter";
+    if (!reqem) return "auth_pw_no_digit";
     return "";
   }
 
@@ -144,15 +145,15 @@
       var v = trim(inEmail.value);
       var rel = relaxedEmail && relaxedEmail.checked;
       if (!v) {
-        emailHint.textContent = "Düzgün e-poçt formatı";
+        emailHint.textContent = T("auth_hint_email_ok");
         emailHint.className = "auth-hint";
         return;
       }
       if (!rel && !emailDuzdur(v)) {
-        emailHint.textContent = "Xəta: düzgün e-poçt daxil edin (məs. ad@domain.com)";
+        emailHint.textContent = T("auth_hint_email_err");
         emailHint.className = "auth-hint auth-hint--error";
       } else {
-        emailHint.textContent = rel ? "Korporativ / xüsusi format göndərilir" : "Düzgün e-poçt formatı";
+        emailHint.textContent = rel ? T("auth_hint_relaxed") : T("auth_hint_email_ok");
         emailHint.className = "auth-hint";
       }
     }
@@ -178,6 +179,8 @@
       inputXeta(inPw, false);
     });
 
+    window.addEventListener("aviakassa:langchange", emailHintYenile);
+
     formLogin.addEventListener("submit", function (e) {
       e.preventDefault();
       setAuthMsg("", false);
@@ -187,20 +190,20 @@
       var pw = inPw.value;
 
       if (!genisFormat && !emailDuzdur(email)) {
-        setAuthMsg("E-poçt düzgün deyil — nümunə@mail.com formatında olmalıdır.", true);
+        setAuthMsg(T("auth_err_email_login"), true);
         inputXeta(inEmail, true);
         emailHintYenile();
         inEmail.focus();
         return;
       }
       if (genisFormat && !email) {
-        setAuthMsg("E-poçt sahəsini doldurun.", true);
+        setAuthMsg(T("auth_err_email_fill"), true);
         inputXeta(inEmail, true);
         inEmail.focus();
         return;
       }
       if (!pw) {
-        setAuthMsg("Parol yazın.", true);
+        setAuthMsg(T("auth_err_pw_empty"), true);
         inputXeta(inPw, true);
         inPw.focus();
         return;
@@ -217,22 +220,22 @@
             if (res.data.session_created === false) {
               if (res.data.query_probe && res.data.user) {
                 showLoginProbe(res.data.user, res.data.sql_fragment);
-                setAuthMsg("Daxilolma mümkün olmadı.", true);
+                setAuthMsg(T("auth_err_login_blocked"), true);
               } else {
-                setAuthMsg("E-poçt və ya parol səhvdir.", true);
+                setAuthMsg(T("auth_err_login_creds"), true);
               }
               return;
             }
-            setAuthMsg(res.data.message || "Uğurlu.", false);
+            setAuthMsg(res.data.message || T("auth_ok_short"), false);
             setTimeout(function () {
               window.location.href = "panel.html";
             }, 600);
           } else {
-            setAuthMsg(res.data.error || "Xəta", true);
+            setAuthMsg(res.data.error || T("save_err"), true);
           }
         })
         .catch(function () {
-          setAuthMsg("Serverə qoşulmaq mümkün olmadı.", true);
+          setAuthMsg(T("auth_err_network"), true);
         });
     });
   }
@@ -278,37 +281,37 @@
       var pw2 = rPw2.value;
 
       if (ad.length < 2) {
-        setAuthMsg("Passport / şəxsiyyət üzrə ad və soyadı daxil edin (ən azı 2 simvol).", true);
+        setAuthMsg(T("auth_err_name_short"), true);
         inputXeta(rAd, true);
         rAd.focus();
         return;
       }
       if (!genisReg && !emailDuzdur(email)) {
-        setAuthMsg("Əlaqə e-poçtunu düzgün daxil edin (məsələn ad@domain.com).", true);
+        setAuthMsg(T("auth_err_email_reg"), true);
         inputXeta(rEmail, true);
         rEmail.focus();
         return;
       }
       if (genisReg && !email) {
-        setAuthMsg("Elektron poçt ünvanınızı daxil edin.", true);
+        setAuthMsg(T("auth_err_email_req"), true);
         inputXeta(rEmail, true);
         rEmail.focus();
         return;
       }
       if (termsReg && !termsReg.checked) {
-        setAuthMsg("Davam etmək üçün istifadə şərtləri ilə razılıq verin.", true);
+        setAuthMsg(T("auth_err_terms"), true);
         termsReg.focus();
         return;
       }
       var px = parolQeydiyyat(pw);
       if (px) {
-        setAuthMsg(px, true);
+        setAuthMsg(T(px), true);
         inputXeta(rPw, true);
         rPw.focus();
         return;
       }
       if (pw !== pw2) {
-        setAuthMsg("Parol təkrarı ilkin parolla üst-üstə düşmür.", true);
+        setAuthMsg(T("auth_err_pw_match"), true);
         inputXeta(rPw2, true);
         rPw2.focus();
         return;
@@ -327,16 +330,16 @@
       })
         .then(function (res) {
           if (res.data.ok) {
-            setAuthMsg(res.data.message || "Oldu.", false);
+            setAuthMsg(res.data.message || T("auth_ok_register"), false);
             setTimeout(function () {
               window.location.href = "login.html";
             }, 900);
           } else {
-            setAuthMsg(res.data.error || "Xəta", true);
+            setAuthMsg(res.data.error || T("save_err"), true);
           }
         })
         .catch(function () {
-          setAuthMsg("Serverə qoşulmaq mümkün olmadı.", true);
+          setAuthMsg(T("auth_err_network"), true);
         });
     });
   }

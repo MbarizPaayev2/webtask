@@ -7,6 +7,17 @@
     history.replaceState(null, "", window.location.pathname + window.location.hash);
   }
 
+  function T(k, map) {
+    return window.AviakassaLang ? AviakassaLang.t(k, map) : k;
+  }
+
+  function localeCollator() {
+    var g = window.AviakassaLang ? AviakassaLang.get() : "az";
+    if (g === "ru") return "ru";
+    if (g === "en") return "en";
+    return "az";
+  }
+
   /** Ölkə adı → əsas şəhər / aeroportlar (nümunə siyahılar) */
   var OLKE_SEHERLER = {
     Azərbaycan: ["Bakı", "Gəncə", "Naxçıvan"],
@@ -49,9 +60,12 @@
   for (var k in OLKE_SEHERLER) {
     if (Object.prototype.hasOwnProperty.call(OLKE_SEHERLER, k)) OLKELER.push(k);
   }
-  OLKELER.sort(function (a, b) {
-    return a.localeCompare(b, "az");
-  });
+  function sortOlke() {
+    OLKELER.sort(function (a, b) {
+      return a.localeCompare(b, localeCollator());
+    });
+  }
+  sortOlke();
 
   var form = document.getElementById("flight-search-form");
   var msgEl = document.getElementById("form-message");
@@ -63,7 +77,21 @@
   var elTarix = document.getElementById("tarix");
   var elSernisin = document.getElementById("sərnişin");
 
+  function trimStr(s) {
+    return (s || "").trim();
+  }
+
+  function olkeSiyahindaVar(s) {
+    var t = trimStr(s);
+    if (!t) return false;
+    for (var i = 0; i < OLKELER.length; i++) {
+      if (OLKELER[i] === t) return true;
+    }
+    return false;
+  }
+
   function seherleriDoldur(sel, olke, bosMətn) {
+    var prev = trimStr(sel.value);
     sel.innerHTML = "";
     sel.disabled = true;
     sel.setAttribute("aria-disabled", "true");
@@ -83,9 +111,12 @@
       o.textContent = arr[i];
       sel.appendChild(o);
     }
+    if (prev && arr.indexOf(prev) >= 0) sel.value = prev;
   }
 
   function olkeSecimleriniDoldur(sel, bosMətn) {
+    var prev = trimStr(sel.value);
+    sel.innerHTML = "";
     var bos = document.createElement("option");
     bos.value = "";
     bos.textContent = bosMətn;
@@ -96,18 +127,37 @@
       o.textContent = OLKELER[i];
       sel.appendChild(o);
     }
+    if (prev && olkeSiyahindaVar(prev)) sel.value = prev;
   }
 
-  olkeSecimleriniDoldur(elHaradanOlke, "— Ölkə seçin —");
-  olkeSecimleriniDoldur(elHaraOlke, "— Ölkə seçin —");
-  seherleriDoldur(elHaradanSeher, "", "— Əvvəl ölkə seçin —");
-  seherleriDoldur(elHaraSeher, "", "— Əvvəl ölkə seçin —");
+  function refreshAviakassaLang() {
+    if (!window.AviakassaLang) return;
+    sortOlke();
+    olkeSecimleriniDoldur(elHaradanOlke, T("ava_ph_country"));
+    olkeSecimleriniDoldur(elHaraOlke, T("ava_ph_country"));
+    seherleriDoldur(
+      elHaradanSeher,
+      elHaradanOlke.value,
+      T(elHaradanOlke.value ? "ava_ph_city" : "ava_ph_city_first")
+    );
+    seherleriDoldur(
+      elHaraSeher,
+      elHaraOlke.value,
+      T(elHaraOlke.value ? "ava_ph_city" : "ava_ph_city_first")
+    );
+    if (window.AviakassaLang.applyPage) AviakassaLang.applyPage();
+  }
+
+  olkeSecimleriniDoldur(elHaradanOlke, T("ava_ph_country"));
+  olkeSecimleriniDoldur(elHaraOlke, T("ava_ph_country"));
+  seherleriDoldur(elHaradanSeher, "", T("ava_ph_city_first"));
+  seherleriDoldur(elHaraSeher, "", T("ava_ph_city_first"));
 
   elHaradanOlke.addEventListener("change", function () {
-    seherleriDoldur(elHaradanSeher, elHaradanOlke.value, "— Şəhər seçin —");
+    seherleriDoldur(elHaradanSeher, elHaradanOlke.value, T("ava_ph_city"));
   });
   elHaraOlke.addEventListener("change", function () {
-    seherleriDoldur(elHaraSeher, elHaraOlke.value, "— Şəhər seçin —");
+    seherleriDoldur(elHaraSeher, elHaraOlke.value, T("ava_ph_city"));
   });
 
   elTarix.min = new Date().toISOString().split("T")[0];
@@ -117,19 +167,6 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
-  }
-
-  function trimStr(s) {
-    return (s || "").trim();
-  }
-
-  function olkeSiyahindaVar(s) {
-    var t = trimStr(s);
-    if (!t) return false;
-    for (var i = 0; i < OLKELER.length; i++) {
-      if (OLKELER[i] === t) return true;
-    }
-    return false;
   }
 
   function seherSiyahindaVar(olke, seher) {
@@ -180,6 +217,8 @@
   secimXetasiniSil(elHaraOlke);
   secimXetasiniSil(elHaraSeher);
 
+  window.addEventListener("aviakassa:langchange", refreshAviakassaLang);
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -195,46 +234,46 @@
     var tarix = elTarix.value;
 
     if (!ho || !olkeSiyahindaVar(ho)) {
-      setMsg("«Haradan» üçün ölkə seçin.", "err");
+      setMsg(T("ava_err_from_co"), "err");
       elHaradanOlke.classList.add("input-error");
       elHaradanOlke.focus();
       return;
     }
     if (!hs || !seherSiyahindaVar(ho, hs)) {
-      setMsg("«Haradan» üçün şəhər seçin.", "err");
+      setMsg(T("ava_err_from_city"), "err");
       elHaradanSeher.classList.add("input-error");
       elHaradanSeher.focus();
       return;
     }
 
     if (!ko || !olkeSiyahindaVar(ko)) {
-      setMsg("«Hara» üçün ölkə seçin.", "err");
+      setMsg(T("ava_err_to_co"), "err");
       elHaraOlke.classList.add("input-error");
       elHaraOlke.focus();
       return;
     }
     if (!ks || !seherSiyahindaVar(ko, ks)) {
-      setMsg("«Hara» üçün şəhər seçin.", "err");
+      setMsg(T("ava_err_to_city"), "err");
       elHaraSeher.classList.add("input-error");
       elHaraSeher.focus();
       return;
     }
 
     if (ho === ko && hs === ks) {
-      setMsg("Çıxış və təyinat eyni şəhər ola bilməz.", "err");
+      setMsg(T("ava_err_same_city"), "err");
       elHaraSeher.classList.add("input-error");
       elHaraSeher.focus();
       return;
     }
 
     if (!tarix) {
-      setMsg("Uçuş tarixini seçin.", "err");
+      setMsg(T("ava_err_date"), "err");
       elTarix.classList.add("input-error");
       elTarix.focus();
       return;
     }
     if (!tarixKecemediMi(tarix)) {
-      setMsg("Keçmiş tarix seçmək olmaz.", "err");
+      setMsg(T("ava_err_past"), "err");
       elTarix.classList.add("input-error");
       elTarix.focus();
       return;
@@ -242,31 +281,31 @@
 
     var sernisin = elSernisin.value;
     if (sernisin !== "1" && sernisin !== "2" && sernisin !== "3") {
-      setMsg("Sərnişin sayını düzgün seçin.", "err");
+      setMsg(T("ava_err_pax"), "err");
       elSernisin.classList.add("input-error");
       elSernisin.focus();
       return;
     }
 
-    setMsg("Məlumatlar qəbul edildi. Aşağıda xülasə.", "ok");
+    setMsg(T("ava_ok_accepted"), "ok");
     summaryBox.hidden = false;
     var haradanSətir = guvenliMətn(hs) + ", " + guvenliMətn(ho);
     var haraSətir = guvenliMətn(ks) + ", " + guvenliMətn(ko);
     summaryBox.innerHTML =
-      "<strong>Axtarış xülasəsi</strong><br />" +
-      "<span class=\"search-summary__route\">" +
+      "<strong>" +
+      guvenliMətn(T("ava_summary_title")) +
+      "</strong><br />" +
+      '<span class="search-summary__route">' +
       haradanSətir +
       " → " +
       haraSətir +
-      "</span><br />Tarix: " +
-      guvenliMətn(tarix) +
-      " · Sərnişin: " +
-      guvenliMətn(sernisin) +
-      " nəfər";
+      "</span><br />" +
+      guvenliMətn(T("ava_summary_meta", { date: tarix, n: sernisin }));
   });
 
   var userDbInfo = document.getElementById("user-db-info");
-  if (userDbInfo) {
+  function refreshUserDbLine() {
+    if (!userDbInfo || !window.AviakassaLang) return;
     fetch("/api/me", { credentials: "same-origin" })
       .then(function (r) {
         return r.json();
@@ -276,9 +315,18 @@
         var u = data.user;
         var ad = u.full_name || u.email || "";
         userDbInfo.textContent =
-          "Hesab: " + ad + " · " + u.email + (u.created_at ? " · " + u.created_at : "");
+          T("user_db_prefix") +
+          " " +
+          ad +
+          " · " +
+          u.email +
+          (u.created_at ? " · " + u.created_at : "");
         userDbInfo.hidden = false;
       })
       .catch(function () {});
+  }
+  if (userDbInfo) {
+    refreshUserDbLine();
+    window.addEventListener("aviakassa:langchange", refreshUserDbLine);
   }
 })();

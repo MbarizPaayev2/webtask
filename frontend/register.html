@@ -3,26 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Qeydiyyat — Aviakassa</title>
+  <title data-i18n="title_register">Qeydiyyat — Aviakassa</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="page">
-    <nav class="auth-nav">
-      <a href="login.html">Giriş</a>
-      <a href="register.html">Qeydiyyat</a>
-      <a href="aviakassa.html">Uçuş axtar</a>
+    <nav class="auth-nav auth-nav--split">
+      <div class="auth-nav__links">
+        <a href="login.html" data-i18n="nav_login">Giriş</a>
+        <a href="register.html" aria-current="page" data-i18n="nav_register">Qeydiyyat</a>
+        <a href="aviakassa.html" data-i18n="nav_search">Uçuş axtar</a>
+      </div>
+      <div class="lang-switch" role="group" data-i18n-aria="lang_aria">
+        <button type="button" class="lang-switch__btn is-active" data-set-lang="az" aria-pressed="true">AZ</button>
+        <button type="button" class="lang-switch__btn" data-set-lang="ru" aria-pressed="false">RU</button>
+        <button type="button" class="lang-switch__btn" data-set-lang="en" aria-pressed="false">EN</button>
+      </div>
     </nav>
 
     <header class="site-header">
       <div class="site-header__logo">✈ Aviakassa</div>
-      <p class="site-header__tagline">Səyahətçi hesabı</p>
+      <p class="site-header__tagline" data-i18n="reg_tagline">Səyahətçi hesabı</p>
     </header>
 
     <main>
       <section class="card auth-card" aria-labelledby="reg-title">
-        <h2 id="reg-title" class="card__title">Səyahətçi qeydiyyatı</h2>
-        <p class="auth-intro">
+        <h2 id="reg-title" class="card__title" data-i18n="reg_heading">Səyahətçi qeydiyyatı</h2>
+        <p class="auth-intro" data-i18n="reg_intro">
           Rezervasiya təsdiqi, biletlərin göndərilməsi və uçuş xəbərdarlıqları üçün əlaqə məlumatlarınızdan istifadə edəcəyik.
         </p>
 
@@ -30,39 +37,41 @@
 
         <form id="register-form" class="form-grid" novalidate>
           <div class="form-group form-grid--full-width">
-            <label for="reg-name">Passport / şəxsiyyət vəsiqəsi üzrə ad, soyad</label>
+            <label for="reg-name" data-i18n="reg_name_lbl">Passport / şəxsiyyət vəsiqəsi üzrə ad, soyad</label>
             <input
               type="text"
               id="reg-name"
               name="full_name"
               autocomplete="name"
+              data-i18n-placeholder="reg_name_ph"
               placeholder="Şəxsiyyət sənədindəki kimi"
             />
-            <span class="auth-hint">Biletdə çap olunacaq yazılışla eyni olmalıdır (ən azı 2 simvol).</span>
+            <span class="auth-hint" data-i18n="reg_name_hint">Biletdə çap olunacaq yazılışla eyni olmalıdır (ən azı 2 simvol).</span>
           </div>
           <div class="form-group form-grid--full-width">
-            <label for="reg-email">Əlaqə e-poçtu</label>
+            <label for="reg-email" data-i18n="reg_email_lbl">Əlaqə e-poçtu</label>
             <input
               type="text"
               id="reg-email"
               name="email"
               autocomplete="email"
               inputmode="email"
+              data-i18n-placeholder="reg_email_ph"
               placeholder="ad.soyad@mail.com"
               maxlength="254"
             />
-            <span class="auth-hint">Elektron bilet və dəyişiklik bildirişləri bu ünvana göndəriləcək.</span>
+            <span class="auth-hint" data-i18n="reg_email_hint">Elektron bilet və dəyişiklik bildirişləri bu ünvana göndəriləcək.</span>
           </div>
           <div class="form-group form-grid--full-width form-group--check">
             <div class="auth-check-row">
               <input type="checkbox" id="auth-relaxed-email" class="auth-check-row__input" />
-              <label for="auth-relaxed-email" class="auth-check-row__label">
+              <label for="auth-relaxed-email" class="auth-check-row__label" data-i18n="login_relaxed">
                 Korporativ iş e-poçtu istifadə edirəm (şirkət domeni üzrə ünvan)
               </label>
             </div>
           </div>
           <div class="form-group form-grid--full-width">
-            <label for="reg-password">Hesab parolu</label>
+            <label for="reg-password" data-i18n="reg_pw_lbl">Hesab parolu</label>
             <input
               type="password"
               id="reg-password"
@@ -71,10 +80,10 @@
               placeholder="••••••••"
               maxlength="256"
             />
-            <span class="auth-hint">Ən azı 8 simvol; həm hərf, həm rəqəm — hesab və ödəniş təhlükəsizliyi üçün.</span>
+            <span class="auth-hint" data-i18n="reg_pw_hint">Ən azı 8 simvol; həm hərf, həm rəqəm — hesab və ödəniş təhlükəsizliyi üçün.</span>
           </div>
           <div class="form-group form-grid--full-width">
-            <label for="reg-password2">Parolu təsdiqləyin</label>
+            <label for="reg-password2" data-i18n="reg_pw2_lbl">Parolu təsdiqləyin</label>
             <input
               type="password"
               id="reg-password2"
@@ -83,38 +92,33 @@
               placeholder="••••••••"
               maxlength="256"
             />
-            <span class="auth-hint">Təkrarlanan parol yuxarıdakı ilə üst-üstə düşməlidir.</span>
+            <span class="auth-hint" data-i18n="reg_pw2_hint">Təkrarlanan parol yuxarıdakı ilə üst-üstə düşməlidir.</span>
           </div>
           <div class="form-group form-grid--full-width form-group--check">
             <div class="auth-check-row auth-check-row--legal">
               <input type="checkbox" id="reg-terms" class="auth-check-row__input" />
-              <label for="reg-terms" class="auth-check-row__label">
-                <a href="#terms" class="auth-inline-link">İstifadə şərtləri</a>
-                və
-                <a href="#privacy" class="auth-inline-link">məxfilik siyasəti</a>
-                ilə tanış oldum və razıyam; şəxsi məlumatlarımın biletlərin təqdimi üçün emalına icazə verirəm.
-              </label>
+              <label for="reg-terms" class="auth-check-row__label" data-i18n-html="reg_terms_html"></label>
             </div>
           </div>
           <div class="form-group form-grid--full-width">
-            <button type="submit" class="btn">Qeydiyyatı tamamla</button>
+            <button type="submit" class="btn" data-i18n="reg_submit">Qeydiyyatı tamamla</button>
           </div>
         </form>
 
-        <p class="auth-footer">
+        <p class="auth-footer" data-i18n-html="reg_footer_html">
           Artıq hesabınız var? <a href="login.html">Giriş</a>
         </p>
 
         <div class="auth-legal" id="terms" tabindex="-1">
-          <h3 class="auth-legal__title">İstifadə şərtləri</h3>
-          <p class="auth-legal__text">
+          <h3 class="auth-legal__title" data-i18n="reg_terms_title">İstifadə şərtləri</h3>
+          <p class="auth-legal__text" data-i18n="reg_terms_body">
             Rezervasiya və ödənişlər Aviakassa qaydalarına uyğun aparılır; biletlər elektron kanalla təqdim olunur.
             Dəyişiklik və geri ödəmə qaydaları daşıyıcı şirkətin tarifinə əsasən tətbiq olunur.
           </p>
         </div>
         <div class="auth-legal" id="privacy" tabindex="-1">
-          <h3 class="auth-legal__title">Məxfilik</h3>
-          <p class="auth-legal__text">
+          <h3 class="auth-legal__title" data-i18n="reg_privacy_title">Məxfilik</h3>
+          <p class="auth-legal__text" data-i18n="reg_privacy_body">
             Şəxsi məlumatlarınız yalnız səyahət sənədlərinin tərtibi, biletlərin göndərilməsi və qanuni öhdəliklər üçün
             emal olunur; üçüncü tərəflərə yalnız zəruri hallarda ötürülür.
           </p>
@@ -123,10 +127,11 @@
     </main>
 
     <footer class="page-footer">
-      <p>© Aviakassa</p>
+      <p data-i18n="footer_copy">© Aviakassa</p>
     </footer>
   </div>
 
+  <script src="lang.js"></script>
   <script src="auth.js"></script>
 </body>
 </html>

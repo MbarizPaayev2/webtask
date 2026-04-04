@@ -3,7 +3,6 @@
   var guest = document.getElementById("panel-guest");
   var hero = document.getElementById("panel-hero");
   var stats = document.getElementById("panel-stats");
-  var greeting = document.getElementById("panel-greeting");
   var avatarEl = document.getElementById("panel-avatar");
   var nameEl = document.getElementById("panel-user-name");
   var emailEl = document.getElementById("panel-user-email");
@@ -28,6 +27,17 @@
   var copyEmailBtn = document.getElementById("panel-copy-email");
   var aboutCountEl = document.getElementById("panel-about-count");
   var spotlight = document.getElementById("panel-spotlight");
+  var lastUser = null;
+  var lastBookings = [];
+  var lastBookingsNote = "";
+
+  function localeTag() {
+    if (!window.AviakassaLang) return "az-Latn";
+    var g = AviakassaLang.get();
+    if (g === "ru") return "ru-RU";
+    if (g === "en") return "en-GB";
+    return "az-Latn";
+  }
 
   function esc(s) {
     if (s === null || s === undefined) return "";
@@ -48,7 +58,7 @@
   function formatMoney(n) {
     var x = Number(n);
     if (isNaN(x)) return "—";
-    return x.toLocaleString("az-Latn", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₼";
+    return x.toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₼";
   }
 
   function formatDateShort(s) {
@@ -58,18 +68,10 @@
     try {
       var d = new Date(t);
       if (!isNaN(d.getTime())) {
-        return d.toLocaleDateString("az-Latn", { day: "numeric", month: "short", year: "numeric" });
+        return d.toLocaleDateString(localeTag(), { day: "numeric", month: "short", year: "numeric" });
       }
     } catch (e) {}
     return t.slice(0, 16);
-  }
-
-  function greetingLine() {
-    var h = new Date().getHours();
-    if (h >= 5 && h < 12) return "Sabahınız xeyir";
-    if (h >= 12 && h < 17) return "Gününüz xeyir";
-    if (h >= 17 && h < 22) return "Axşamınız xeyir";
-    return "Xoş gəldiniz";
   }
 
   function firstNameFromUser(fullName, email) {
@@ -79,27 +81,32 @@
       return parts[0];
     }
     if (email) return String(email).split("@")[0];
-    return "Səyahətçi";
+    return window.AviakassaLang ? AviakassaLang.t("traveler_default") : "Səyahətçi";
   }
 
   function updateAboutCount() {
     if (!aboutEl || !aboutCountEl) return;
+    if (!window.AviakassaLang) return;
     var len = (aboutEl.value || "").length;
-    aboutCountEl.textContent =
-      len.toLocaleString("az-Latn") + " / 100 000 simvol";
+    aboutCountEl.textContent = AviakassaLang.charCounter(len.toLocaleString(localeTag()));
   }
 
-  function formatMemberSince(iso) {
-    if (!iso) return "Üzv: —";
-    try {
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) return "Üzv: " + String(iso).slice(0, 10);
-      var m = d.toLocaleDateString("az-Latn", { month: "long", year: "numeric" });
-      return "Üzv: " + m.charAt(0).toUpperCase() + m.slice(1);
-    } catch (e) {
-      return "Üzv: —";
+  function refreshPanelLang() {
+    if (!window.AviakassaLang) return;
+    if (lastUser) {
+      if (heroWelcome) {
+        heroWelcome.textContent = AviakassaLang.greetingFirst(
+          firstNameFromUser(lastUser.full_name, lastUser.email)
+        );
+      }
+      if (memberEl) memberEl.textContent = AviakassaLang.memberLine(lastUser.created_at);
+      if (nameEl) nameEl.textContent = lastUser.full_name || AviakassaLang.t("traveler_default");
     }
+    updateAboutCount();
+    renderBookings(lastBookings, lastBookingsNote);
   }
+
+  window.addEventListener("aviakassa:langchange", refreshPanelLang);
 
   function statusBadge(status) {
     var raw = String(status || "");
@@ -138,6 +145,8 @@
   }
 
   function renderBookings(bookings, note) {
+    lastBookings = bookings || [];
+    lastBookingsNote = note || "";
     if (bookingsNote) {
       if (note) {
         bookingsNote.hidden = false;
@@ -212,6 +221,7 @@
         return;
       }
       var u = data.user;
+      lastUser = u;
       if (guest) guest.hidden = true;
       if (main) main.hidden = false;
       if (hero) hero.hidden = false;
@@ -222,12 +232,15 @@
         if (navLogin) navLogin.hidden = true;
       }
 
-      if (nameEl) nameEl.textContent = u.full_name || "Səyahətçi";
+      if (nameEl) nameEl.textContent = u.full_name || (window.AviakassaLang ? AviakassaLang.t("traveler_default") : "Səyahətçi");
       if (emailEl) emailEl.textContent = u.email || "";
-      if (memberEl) memberEl.textContent = formatMemberSince(u.created_at);
-      if (heroWelcome) {
-        heroWelcome.textContent =
-          greetingLine() + ", " + firstNameFromUser(u.full_name, u.email) + "!";
+      if (memberEl) memberEl.textContent = window.AviakassaLang
+        ? AviakassaLang.memberLine(u.created_at)
+        : "—";
+      if (heroWelcome && window.AviakassaLang) {
+        heroWelcome.textContent = AviakassaLang.greetingFirst(firstNameFromUser(u.full_name, u.email));
+      } else if (heroWelcome) {
+        heroWelcome.textContent = "—";
       }
       setAvatar(u.full_name, u.email);
 
@@ -298,14 +311,15 @@
             })
             .then(function (res) {
               if (res.data.ok && res.data.user) {
-                showAboutMsg("Profil yeniləndi.", false);
+                lastUser = res.data.user;
+                showAboutMsg(window.AviakassaLang ? AviakassaLang.t("save_ok") : "Profil yeniləndi.", false);
                 renderPreview(res.data.user.about_me || "");
               } else {
-                showAboutMsg(res.data.error || "Xəta", true);
+                showAboutMsg(res.data.error || (window.AviakassaLang ? AviakassaLang.t("save_err") : "Xəta"), true);
               }
             })
             .catch(function () {
-              showAboutMsg("Server xətası.", true);
+              showAboutMsg(window.AviakassaLang ? AviakassaLang.t("server_err") : "Server xətası.", true);
             });
         });
       }
@@ -339,7 +353,7 @@
           showUploadMsg("", false);
           var fi = document.getElementById("panel-file");
           if (!fi || !fi.files || !fi.files[0]) {
-            showUploadMsg("Fayl seçin.", true);
+            showUploadMsg(window.AviakassaLang ? AviakassaLang.t("upload_err") : "Fayl seçin.", true);
             return;
           }
           var fd = new FormData();
@@ -356,15 +370,15 @@
             })
             .then(function (res) {
               if (res.data.ok) {
-                showUploadMsg("Fayl qəbul edildi.", false);
+                showUploadMsg(window.AviakassaLang ? AviakassaLang.t("upload_ok") : "Fayl qəbul edildi.", false);
                 fi.value = "";
                 refreshUploads();
               } else {
-                showUploadMsg(res.data.error || "Xəta", true);
+                showUploadMsg(res.data.error || (window.AviakassaLang ? AviakassaLang.t("save_err") : "Xəta"), true);
               }
             })
             .catch(function () {
-              showUploadMsg("Server xətası.", true);
+              showUploadMsg(window.AviakassaLang ? AviakassaLang.t("upload_fail") : "Server xətası.", true);
             });
         });
       }
@@ -380,6 +394,7 @@
       }
     })
     .catch(function () {
-      if (nameEl) nameEl.textContent = "Qoşulma xətası";
+      if (nameEl)
+        nameEl.textContent = window.AviakassaLang ? AviakassaLang.t("guest_redirect") : "Qoşulma xətası";
     });
 })();

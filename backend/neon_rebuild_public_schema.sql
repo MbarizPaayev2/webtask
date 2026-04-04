@@ -1,3 +1,5 @@
+-- İstəyə bağlı: mövcud cədvəlləri silib sxemi tətbiqin yenidən yaratmasına buraxmaq (Neon SQL Editor).
+-- Əsas sxem yaradılması: backend/app.py (ilk işə salınma).
 -- Neon / PostgreSQL: köhnə "users" sxemi (username, password və s.) bu layihə ilə uyğun deyil.
 -- Tətbiq gözləyir: email, password_hash, full_name, created_at, about_me
 --
