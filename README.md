@@ -119,6 +119,10 @@ vercel dev
 
 Bu kod bazası tədris və təcrübə mühitində istifadə üçün nəzərdə tutula bilər. İstehsal mühitində işə salınmazdan əvvəl **müstəqil təhlükəsizlik auditindən** keçmək, parolları və açarları düzgün idarə etmək və yalnız etibarlı konfiqurasiya ilə deploy etmək vacibdir.
 
+## Universitet hesabatı
+
+Ətraflı texniki hesabat (arxiv, kod nümunələri, lab təsviri): [REPORT.md](REPORT.md). Demo şəkilləri üçün: `docs/report-screenshots/`.
+
 ## Əlaqə
 
 Repozitoriya: [github.com/MbarizPaayev2/WebSecurity](https://github.com/MbarizPaayev2/WebSecurity)
