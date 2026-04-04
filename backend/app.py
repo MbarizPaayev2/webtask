@@ -21,7 +21,8 @@ FRONTEND_DIR = PROJECT_ROOT / "frontend"
 UPLOAD_DIR = PROJECT_ROOT / "uploads"
 
 # .env: əvvəl layihə kökü, sonra backend/ (hansı varsa)
-load_dotenv(PROJECT_ROOT / ".env")
+# override=True: OS-də qalmış köhnə DATABASE_URL (məs. localhost) layihə .env üzərində yazılmasın
+load_dotenv(PROJECT_ROOT / ".env", override=True)
 load_dotenv(BACKEND_DIR / ".env")
 
 app = Flask(__name__)
