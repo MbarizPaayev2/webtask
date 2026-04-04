@@ -27,6 +27,11 @@ app = Flask(__name__)
 # Təhlükəsizlik yaması: default olaraq təsadüfi gizli açar (Secret Key)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
 
+if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
 DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip()
 if not DATABASE_URL:
     print(
@@ -34,7 +39,9 @@ if not DATABASE_URL:
         "DATABASE_URL=postgresql://user:pass@localhost:5432/dbname təyin edin.",
         file=sys.stderr,
     )
-    sys.exit(1)
+    # Vercel serverless: import zamanı env bəzən yoxdur; layihə ayarlarında DATABASE_URL verin
+    if not (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")):
+        sys.exit(1)
 
 DB_MODE = "postgres"
 

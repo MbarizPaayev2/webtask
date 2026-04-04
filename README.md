@@ -57,15 +57,62 @@ Sağlamlıq yoxlaması: `GET /api/health`
 
 ```
 WebSec/
+├── api/
+│   └── index.py            # Vercel serverless girişi (Flask app)
 ├── backend/
 │   ├── app.py              # Flask tətbiqi və API
 │   ├── requirements.txt
 │   └── postgres_setup.sql  # PostgreSQL sxemi (istəyə bağlı)
-├── frontend/               # Statik HTML, CSS, JS
+├── frontend/               # Statik HTML, CSS, JS (Flask tərəfindən verilir)
 ├── uploads/                # Yüklənmiş fayllar (lokal, git-ə düşmür)
+├── requirements.txt        # Vercel üçün (kök)
+├── vercel.json             # Bütün sorğuları Flask-a yönləndirir
 ├── .env.example
 └── README.md
 ```
+
+## Vercel ilə deploy (frontend + backend birlikdə)
+
+Backend Flask və `frontend/` eyni tətbiqdədir; Vercel-də **tək Python funksiyası** kimi işləyir, bütün URL-lər `vercel.json` vasitəsilə `/api/index`-ə yönləndirilir.
+
+### 1. PostgreSQL (bulud)
+
+Vercel özündə fayl tipli DB saxlamır. **Neon**, **Supabase Postgres**, **Railway** və s. ilə ayrıca PostgreSQL yaradın və **qoşum sətri**ni götürün (`postgresql://...`).
+
+### 2. Vercel layihəsi
+
+1. [vercel.com](https://vercel.com) → **Add New Project** → GitHub repozitoriyasını birləşdirin.
+2. **Root Directory** layihə kökü qalsın (dəyişməyin).
+3. **Environment Variables** bölməsində ən azı bunları əlavə edin:
+
+| Dəyişən | İzah |
+|--------|------|
+| `DATABASE_URL` | Bulud PostgreSQL qoşum sətri (mütləq) |
+| `FLASK_SECRET_KEY` | Uzun təsadüfi mətn — sessiyanın deploy arası itməməsi üçün **mütləq** (hər deployda təsadüfi açar olmasın) |
+
+Lokal `.env` faylı Vercel-ə köçürülmür; bütün sirli dəyərlər burada verilməlidir.
+
+### 3. Deploy
+
+`main` branch-ına push etdikdən sonra Vercel avtomatik build edəcək. Hazır olanda verilən **Production URL** üzrə `https://.../login.html` və ya `https://.../` açın.
+
+Yoxlama: `GET https://sizin-domain.vercel.app/api/health`
+
+### 4. Məhdudiyyətlər (serverless)
+
+- **Yükləmələr** (`/uploads/`): serverless fayl sistemi **davamlı deyil** — fayllar instansiya dəyişəndə itə bilər. Davamlı saxlama üçün S3, Vercel Blob və s. ayrıca qoşulmalıdır.
+- **Soyuma (cold start)** və **funksiya vaxt limiti** Vercel planından asılıdır.
+- Statik aktivlər üçün Vercel tövsiyə edir `public/`, lakin bu layihədə səhifələr Flask ilə `frontend/` qovluğundan verilir və mövcud konfiqurasiya ilə işləməlidir.
+
+### Lokal olaraq Vercel CLI
+
+```bash
+npm i -g vercel
+vercel login
+vercel dev
+```
+
+Ən azı **Vercel CLI 48.2.10+** tövsiyə olunur. `vercel dev` zamanı `.env` lokalda işləyir.
 
 ## Təhlükəsizlik qeydi
 
