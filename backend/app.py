@@ -4,8 +4,10 @@ Aviakassa — Flask backend (login / register)
 Yalnız PostgreSQL (DATABASE_URL). İşə salmaq: python backend/app.py
 """
 
+import errno
 import os
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -18,18 +20,38 @@ from werkzeug.security import check_password_hash, generate_password_hash
 BACKEND_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BACKEND_DIR.parent
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
-UPLOAD_DIR = PROJECT_ROOT / "uploads"
+
+
+def _is_vercel_runtime() -> bool:
+    """Serverless (Vercel/Lambda): SSL, sessiya, /tmp upload, DB timeout.
+    Vercel bəzən VERCEL env vermir; kod həmişə /var/task altında yerləşir (read-only)."""
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        return True
+    if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        return True
+    try:
+        root = str(PROJECT_ROOT.resolve()).replace("\\", "/")
+    except OSError:
+        root = str(PROJECT_ROOT).replace("\\", "/")
+    return root == "/var/task" or root.startswith("/var/task/")
+
 
 # .env: əvvəl layihə kökü, sonra backend/ (hansı varsa)
 # override=True: OS-də qalmış köhnə DATABASE_URL (məs. localhost) layihə .env üzərində yazılmasın
 load_dotenv(PROJECT_ROOT / ".env", override=True)
 load_dotenv(BACKEND_DIR / ".env")
 
+# Serverless: layihə qovluğuna (/var/task) yazmaq olmaz — yalnız gettempdir()
+if _is_vercel_runtime():
+    UPLOAD_DIR = Path(tempfile.gettempdir()) / "aviakassa_uploads"
+else:
+    UPLOAD_DIR = PROJECT_ROOT / "uploads"
+
 app = Flask(__name__)
 # Təhlükəsizlik yaması: default olaraq təsadüfi gizli açar (Secret Key)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
 
-if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+if _is_vercel_runtime():
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -42,26 +64,24 @@ if not DATABASE_URL:
         file=sys.stderr,
     )
     # Vercel serverless: import zamanı env bəzən yoxdur; layihə ayarlarında DATABASE_URL verin
-    if not (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")):
+    if not _is_vercel_runtime():
         sys.exit(1)
 
 DB_MODE = "postgres"
-
-
-def _is_vercel_runtime() -> bool:
-    return bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
 
 
 def _effective_database_url() -> str:
     """Bulud Postgres (Neon, Supabase və s.) üçün SSL; Vercel-dən qoşulmada sslmode tez-tez lazımdır."""
     if not DATABASE_URL:
         return ""
-    if not _is_vercel_runtime():
-        return DATABASE_URL
     parsed = urlparse(DATABASE_URL)
     qs = parse_qs(parsed.query)
+    # Bəzi libpq/psycopg2 (xüsusən Linux/Vercel) channel_binding ilə uğursuz qoşulur
+    for _k in list(qs.keys()):
+        if _k.lower() == "channel_binding":
+            del qs[_k]
     keys_lower = {k.lower() for k in qs}
-    if "sslmode" not in keys_lower:
+    if _is_vercel_runtime() and "sslmode" not in keys_lower:
         qs["sslmode"] = ["require"]
     new_query = urlencode(qs, doseq=True)
     return urlunparse(parsed._replace(query=new_query))
@@ -129,6 +149,12 @@ except Exception as ex:
 def _migrate_postgres_extras():
     conn = get_db_postgres()
     cur = conn.cursor()
+    # Köhnə/boş sxemdə users mövcud olsa belə CREATE TABLE sütun əlavə etmir
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT")
+    cur.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()"
+    )
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS about_me TEXT DEFAULT ''")
     cur.execute(
         """
@@ -205,7 +231,18 @@ try:
 except Exception as ex:
     print("Postgres əlavə sxem xətası:", ex)
 
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+except OSError as ex:
+    # Linux EROFS=30: /var/task — env boş qalsa belə kökü düzəlt
+    if getattr(ex, "errno", None) == errno.EROFS:
+        UPLOAD_DIR = Path(tempfile.gettempdir()) / "aviakassa_uploads"
+        try:
+            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        except OSError as ex2:
+            print("Upload qovluğu yaradılmadı:", ex2, file=sys.stderr)
+    else:
+        print("Upload qovluğu yaradılmadı (məs. read-only FS):", ex, file=sys.stderr)
 
 
 def validate_email(email: str) -> bool:
@@ -495,7 +532,11 @@ def api_login():
     if INSECURE_SQL_DB and DEV_AUTH_BYPASS:
         pw_ok = True
     else:
-        pw_ok = check_password_hash(row["password_hash"], password)
+        ph = row.get("password_hash")
+        try:
+            pw_ok = bool(ph) and check_password_hash(str(ph), password)
+        except (TypeError, ValueError):
+            pw_ok = False
     if not pw_ok:
         return jsonify({"ok": False, "error": "E-poçt və ya parol səhvdir."}), 401
 
@@ -612,7 +653,13 @@ def api_upload():
         return jsonify({"ok": False, "error": f"Faylın növünə icazə verilmir ({ext}). Yalnız JPG, PNG, PDF."}), 400
 
     dest_path = UPLOAD_DIR / unsafe_name
-    f.save(str(dest_path))
+    try:
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        f.save(str(dest_path))
+    except OSError:
+        return jsonify(
+            {"ok": False, "error": "Fayl saxlanılmadı (server fayl sistemi)."}
+        ), 500
     uid = session["user_id"]
     conn = get_db_postgres()
     cur = conn.cursor()
