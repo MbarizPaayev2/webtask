@@ -87,8 +87,10 @@ Vercel özündə fayl tipli DB saxlamır. **Neon**, **Supabase Postgres**, **Rai
 
 | Dəyişən | İzah |
 |--------|------|
-| `DATABASE_URL` | Bulud PostgreSQL qoşum sətri (mütləq) |
-| `FLASK_SECRET_KEY` | Uzun təsadüfi mətn — sessiyanın deploy arası itməməsi üçün **mütləq** (hər deployda təsadüfi açar olmasın) |
+| `DATABASE_URL` | Bulud PostgreSQL qoşum sətri (mütləq) — Neon/Supabase panelindən kopyalayın |
+| `FLASK_SECRET_KEY` | Uzun təsadüfi mətn — sessiyanın deploy arası itməməsi üçün **mütləq** |
+
+**Verilənlər bazasına qoşulma:** Tətbiq Vercel mühitində (`VERCEL`) avtomatik olaraq qoşum sətirinə `sslmode=require` əlavə edir (əgər siz artıq verməmisinizsə). Bulud Postgres üzrə məlumatın çəkilməsi üçün bu vacibdir.
 
 Lokal `.env` faylı Vercel-ə köçürülmür; bütün sirli dəyərlər burada verilməlidir.
 
@@ -100,9 +102,8 @@ Yoxlama: `GET https://sizin-domain.vercel.app/api/health`
 
 ### 4. Məhdudiyyətlər (serverless)
 
-- **Yükləmələr** (`/uploads/`): serverless fayl sistemi **davamlı deyil** — fayllar instansiya dəyişəndə itə bilər. Davamlı saxlama üçün S3, Vercel Blob və s. ayrıca qoşulmalıdır.
-- **Soyuma (cold start)** və **funksiya vaxt limiti** Vercel planından asılıdır.
-- Statik aktivlər üçün Vercel tövsiyə edir `public/`, lakin bu layihədə səhifələr Flask ilə `frontend/` qovluğundan verilir və mövcud konfiqurasiya ilə işləməlidir.
+- **Yükləmələr** (`/uploads/`): serverless fayl sistemi **davamlı deyil** — davamlı saxlama üçün S3, Vercel Blob və s. ayrıca qoşulmalıdır.
+- Əsas məqsəd — **PostgreSQL-dən oxuma/yazma** düzgün `DATABASE_URL` ilə işləyir; bulud DB ünvanının firewall-da Vercel çıxışlarına açıq olduğuna əmin olun (Neon/Supabase adətən hamıya açıqdır).
 
 ### Lokal olaraq Vercel CLI
 

@@ -9,6 +9,7 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory, session
@@ -45,6 +46,26 @@ if not DATABASE_URL:
 
 DB_MODE = "postgres"
 
+
+def _is_vercel_runtime() -> bool:
+    return bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
+
+def _effective_database_url() -> str:
+    """Bulud Postgres (Neon, Supabase və s.) üçün SSL; Vercel-dən qoşulmada sslmode tez-tez lazımdır."""
+    if not DATABASE_URL:
+        return ""
+    if not _is_vercel_runtime():
+        return DATABASE_URL
+    parsed = urlparse(DATABASE_URL)
+    qs = parse_qs(parsed.query)
+    keys_lower = {k.lower() for k in qs}
+    if "sslmode" not in keys_lower:
+        qs["sslmode"] = ["require"]
+    new_query = urlencode(qs, doseq=True)
+    return urlunparse(parsed._replace(query=new_query))
+
+
 def _env_flag(*names: str) -> bool:
     for n in names:
         if (os.environ.get(n) or "").strip().lower() in ("1", "true", "yes"):
@@ -70,7 +91,13 @@ def get_db_postgres():
     import psycopg2
     from psycopg2.extras import RealDictCursor
 
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    dsn = _effective_database_url()
+    if not dsn:
+        raise RuntimeError("DATABASE_URL təyin edilməyib — Vercel Environment Variables əlavə edin.")
+    kwargs: Dict[str, Any] = {"cursor_factory": RealDictCursor}
+    if _is_vercel_runtime():
+        kwargs["connect_timeout"] = 15
+    return psycopg2.connect(dsn, **kwargs)
 
 
 def init_db_postgres():
