@@ -13,6 +13,7 @@ Qısa məzmun:
 # ---------------------------------------------------------------------------
 # 1. İmportlar: standart kitabxana, Flask, parol hash (werkzeug)
 # ---------------------------------------------------------------------------
+import hashlib
 import os
 import sys
 import tempfile
@@ -59,6 +60,18 @@ def _is_vercel_runtime() -> bool:
     return root == "/var/task" or root.startswith("/var/task/")
 
 
+def _vercel_derived_session_secret() -> str:
+    """FLASK_SECRET_KEY olmadan Vercel-də sabit imza: mühit dəyişənləri nümunələr arası eyni qalır."""
+    parts = [
+        (os.environ.get("VERCEL_PROJECT_ID") or "").strip(),
+        (os.environ.get("VERCEL_URL") or "").strip(),
+    ]
+    seed = "|".join(p for p in parts if p)
+    if not seed:
+        return ""
+    return hashlib.sha256(f"aviakassa.flask.session:{seed}".encode("utf-8")).hexdigest()
+
+
 # ---------------------------------------------------------------------------
 # 2. Konfiqurasiya: .env yüklənməsi, yükləmə qovluğu, Flask app
 # ---------------------------------------------------------------------------
@@ -74,18 +87,22 @@ else:
     UPLOAD_DIR = PROJECT_ROOT / "uploads"
 
 app = Flask(__name__)
-# secret_key: sessiya çərəzinin imzalanması üçündür. Serverless-də (Vercel) hər soyuq başlanğıcda
-# təsadüfi açar dəyişsə, brauzerdəki sessiya çərəzi bir sorğuda yaradılıb növbətində etibarsız
-# sayılır — girişdən sonra panel yenidən login-ə atır. Buludda FLASK_SECRET_KEY mütləq
-# Environment Variables-də sabit verilməlidir; lokalda .env və ya boşdursa urandom kifayətdir.
+# secret_key: sessiya çərəzinin imzalanması üçündür. Serverless-də təsadüfi urandom hər
+# nümunədə fərqlidirsə, sessiya çərəzi növbəti sorğuda etibarsız sayılır. Əvvəlcə
+# FLASK_SECRET_KEY (ən təhlükəsiz); Vercel-də yoxdursa VERCEL_PROJECT_ID/VERCEL_URL-dən
+# sabit törəmə; lokalda .env və ya urandom.
 _flask_secret = (os.environ.get("FLASK_SECRET_KEY") or "").strip()
 if _is_vercel_runtime():
-    if not _flask_secret:
-        raise RuntimeError(
-            "FLASK_SECRET_KEY Vercel Environment Variables-də təyin olunmalıdır; "
-            "olmasa sessiya çərəzi nümunələr arası etibarlı olmur və giriş saxlanılmır."
-        )
-    app.secret_key = _flask_secret
+    if _flask_secret:
+        app.secret_key = _flask_secret
+    else:
+        derived = _vercel_derived_session_secret()
+        if not derived:
+            raise RuntimeError(
+                "FLASK_SECRET_KEY və ya Vercel VERCEL_PROJECT_ID/VERCEL_URL mühit dəyişənləri "
+                "çatmır; sessiya üçün açar yaradıla bilmir."
+            )
+        app.secret_key = derived
 else:
     app.secret_key = _flask_secret or os.urandom(24)
 
