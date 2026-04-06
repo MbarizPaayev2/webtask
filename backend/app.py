@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Aviakassa — Flask backend (login / register)
-Yalnız PostgreSQL (DATABASE_URL). İşə salmaq: python backend/app.py
+Aviakassa — Flask backend (REST API + statik frontend).
+
+Qısa məzmun:
+- Brauzer HTML/CSS/JS üçün `frontend/` qovluğundan fayl verir.
+- `/api/*` JSON cavabları: qeydiyyat, giriş, sessiya, panel, yükləmə, admin və s.
+- Verilənlər bazası yalnız PostgreSQL; qoşulma sətri `.env` faylındakı DATABASE_URL-dir.
+
+İşə salma (layihə kökündən):  python backend/app.py
 """
 
+# ---------------------------------------------------------------------------
+# 1. İmportlar: standart kitabxana, Flask, parol hash (werkzeug)
+# ---------------------------------------------------------------------------
 import os
 import sys
 import tempfile
@@ -15,6 +24,7 @@ from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
+# Fayl yolları: backend/app.py olduğuna görə parent = layihə kökü (WebSec/)
 BACKEND_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BACKEND_DIR.parent
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
@@ -32,6 +42,7 @@ def _path_is_under_var_task(p: Path) -> bool:
 
 
 def _is_vercel_runtime() -> bool:
+    # Vercel-də kod /var/task altında paketlənir; mühit dəyişənləri və fayl sistemi fərqlidir
     """Serverless (Vercel/Lambda): SSL, sessiya, /tmp upload, DB timeout."""
     if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
         return True
@@ -48,6 +59,9 @@ def _is_vercel_runtime() -> bool:
     return root == "/var/task" or root.startswith("/var/task/")
 
 
+# ---------------------------------------------------------------------------
+# 2. Konfiqurasiya: .env yüklənməsi, yükləmə qovluğu, Flask app
+# ---------------------------------------------------------------------------
 # .env: əvvəl layihə kökü, sonra backend/ (hansı varsa)
 # override=True: OS-də qalmış köhnə DATABASE_URL (məs. localhost) layihə .env üzərində yazılmasın
 load_dotenv(PROJECT_ROOT / ".env", override=True)
@@ -60,13 +74,26 @@ else:
     UPLOAD_DIR = PROJECT_ROOT / "uploads"
 
 app = Flask(__name__)
-# Təhlükəsizlik yaması: default olaraq təsadüfi gizli açar (Secret Key)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
+# secret_key: sessiya çərəzinin imzalanması üçündür. Serverless-də (Vercel) hər soyuq başlanğıcda
+# təsadüfi açar dəyişsə, brauzerdəki sessiya çərəzi bir sorğuda yaradılıb növbətində etibarsız
+# sayılır — girişdən sonra panel yenidən login-ə atır. Buludda FLASK_SECRET_KEY mütləq
+# Environment Variables-də sabit verilməlidir; lokalda .env və ya boşdursa urandom kifayətdir.
+_flask_secret = (os.environ.get("FLASK_SECRET_KEY") or "").strip()
+if _is_vercel_runtime():
+    if not _flask_secret:
+        raise RuntimeError(
+            "FLASK_SECRET_KEY Vercel Environment Variables-də təyin olunmalıdır; "
+            "olmasa sessiya çərəzi nümunələr arası etibarlı olmur və giriş saxlanılmır."
+        )
+    app.secret_key = _flask_secret
+else:
+    app.secret_key = _flask_secret or os.urandom(24)
 
 
 class DatabaseNotConfigured(Exception):
     """DATABASE_URL yoxdur — Vercel-də Environment Variables lazımdır."""
 
+# HTTPS üzərində işləyəndə çərəz yalnız şifrəli kanalla göndərilsin; HttpOnly = JS oxuya bilməz
 if _is_vercel_runtime():
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -119,6 +146,9 @@ def _handle_database_not_configured(_e: DatabaseNotConfigured):
     )
 
 
+# ---------------------------------------------------------------------------
+# 3. Verilənlər bazası: qoşulma sətiri və SSL düzəlişi (bulud Postgres)
+# ---------------------------------------------------------------------------
 DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip()
 if not DATABASE_URL:
     print(
@@ -160,6 +190,8 @@ def _websec_lab_on() -> bool:
     return v not in ("0", "false", "no", "off")
 
 
+# ---------------------------------------------------------------------------
+# 4. Təhlükəsizlik labı bayraqları (tədris üçün zəif SQL / parol bypass — istehsalda söndür)
 # Köhnə env adları: SQLI_LAB → DEV_INSECURE_SQL, SQLI_LAB_SKIP_PASSWORD → DEV_AUTH_BYPASS
 # WEBSEC_LAB=1 (default) olduqda həm zəif SQL, həm parol bypass lab üçün aktiv ola bilər
 _LAB = _websec_lab_on()
@@ -169,6 +201,7 @@ DEV_AUTH_BYPASS = _env_flag("DEV_AUTH_BYPASS", "SQLI_LAB_SKIP_PASSWORD") or _LAB
 
 
 def get_db_postgres():
+    """Yeni PostgreSQL bağlantısı. RealDictCursor: sətir sütun adları ilə dict kimi gəlir."""
     import psycopg2
     from psycopg2.extras import RealDictCursor
 
@@ -182,6 +215,7 @@ def get_db_postgres():
 
 
 def init_db_postgres():
+    # İlk işə salınmada əsas users cədvəli (əgər yoxdursa yaradılır)
     conn = get_db_postgres()
     cur = conn.cursor()
     cur.execute(
@@ -200,6 +234,7 @@ def init_db_postgres():
     conn.close()
 
 
+# İlk deploy: users cədvəli; xəta olsa belə tətbiq işləməyə davam edir (məs. cədvəl artıq var)
 try:
     init_db_postgres()
 except Exception as ex:
@@ -207,6 +242,7 @@ except Exception as ex:
 
 
 def _migrate_postgres_extras():
+    # Köhnə deploy-lar üçün: əlavə sütunlar, flights/transactions/upload cədvəlləri, nümunə məlumat
     conn = get_db_postgres()
     cur = conn.cursor()
     # Köhnə/boş sxemdə users mövcud olsa belə CREATE TABLE sütun əlavə etmir
@@ -341,6 +377,9 @@ def _ensure_upload_dir() -> None:
 _ensure_upload_dir()
 
 
+# ---------------------------------------------------------------------------
+# 5. Validasiya köməkçiləri (giriş/qeydiyyat üçün)
+# ---------------------------------------------------------------------------
 def validate_email(email: str) -> bool:
     email = (email or "").strip()
     if len(email) < 5 or "@" not in email or "." not in email.split("@")[-1]:
@@ -372,6 +411,7 @@ def login_input_bounds(email: str, password: str) -> Tuple[bool, Optional[str]]:
 
 
 def user_get_by_email(email_lower: str) -> Optional[Dict[str, Any]]:
+    # Parametrləşdirilmiş sorğu (%s) — SQL injection əleyhinə düzgün üsul
     conn = get_db_postgres()
     cur = conn.cursor()
     cur.execute(
@@ -435,6 +475,7 @@ def user_insert(email_lower: str, password_hash: str, full_name: str) -> Tuple[b
 
 
 def _user_lookup_concat(email: str) -> Optional[Dict[str, Any]]:
+    # TƏDRİS: String birləşdirmə ilə SQL — SQL injection riski; yalnız DEV_INSECURE_SQL aktiv olanda
     """İnkişaf rejimi: sorğuda mətn birləşdirməsi (DEV_INSECURE_SQL)."""
     conn = get_db_postgres()
     cur = conn.cursor()
@@ -457,6 +498,7 @@ def _user_lookup_concat(email: str) -> Optional[Dict[str, Any]]:
 
 
 def _user_insert_concat(email_lower: str, password_hash: str, full_name: str) -> Tuple[bool, Optional[str]]:
+    # TƏDRİS: INSERT-də də eyni risk — lab üçün
     """İnkişaf rejimi: INSERT-də mətn birləşdirməsi (DEV_INSECURE_SQL)."""
     import psycopg2
 
@@ -498,6 +540,7 @@ def user_update_about_me(user_id: Any, about_me: str) -> bool:
 
 
 def admin_reports_data() -> Dict[str, Any]:
+    # JOIN: transactions ilə users və flights cədvəlləri birləşdirilir (SQL JOIN mövzusu)
     """Bütün uçuşlar və tranzaksiyalar (hesabat üçün)."""
     conn = get_db_postgres()
     cur = conn.cursor()
@@ -566,6 +609,9 @@ def user_bookings_for_user(user_id: Any) -> List[Dict[str, Any]]:
     return out
 
 
+# ---------------------------------------------------------------------------
+# 6. HTTP API marşrutları (JSON request/response)
+# ---------------------------------------------------------------------------
 @app.route("/api/register", methods=["POST"])
 def api_register():
     data = request.get_json(silent=True) or {}
@@ -587,6 +633,7 @@ def api_register():
     if password != password2:
         return jsonify({"ok": False, "error": "Parollar üst-üstə düşmür."}), 400
 
+    # Parol heç vaxt düz mətn saxlanılmır — yalnız hash (werkzeug)
     pw_hash = generate_password_hash(password)
     if INSECURE_SQL_DB:
         ok_ins, err = _user_insert_concat(email.lower(), pw_hash, full_name)
@@ -641,6 +688,7 @@ def api_login():
         return jsonify({"ok": False, "error": "E-poçt və ya parol səhvdir."}), 401
 
     db_user = user_get_by_id(row["id"])
+    # Lab: SQLi ilə gələn saxta user id cədvəldə yoxdursa — sessiya yox, cavabda probe (tədris)
     # UNION ilə saxta id: DB-də yoxdur — sessiya yaratmırıq; yalnız cavabda sorğu sətri (lab exfil)
     if db_user is None:
         probe_user: Dict[str, Any] = {}
@@ -669,6 +717,7 @@ def api_login():
             }
         )
 
+    # Uğurlu giriş: Flask session obyektində user_id saxlanır (server tərəfdə)
     session["user_id"] = row["id"]
     session["email"] = row["email"]
     session["full_name"] = row["full_name"] or ""
@@ -685,6 +734,7 @@ def api_login():
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
+    # Sessiya server tərəfdə təmizlənir; brauzer çərəzi növbəti cavabda yenilənir
     session.clear()
     return jsonify({"ok": True})
 
@@ -745,6 +795,7 @@ def api_upload():
     if not unsafe_name or unsafe_name in (".", ".."):
         return jsonify({"ok": False, "error": "Fayl adı uyğun deyil."}), 400
         
+    # Genişləmə whitelist: .html/.exe yükləmək təhlükəli ola bilər (məzmun növü)
     # Təhlükəsizlik Yaması: Yalnız icazə verilən fayllar yüklənə bilər (XSS/RCE qorunması)
     allowed_extensions = {".png", ".jpg", ".jpeg", ".pdf"}
     ext = os.path.splitext(unsafe_name)[1].lower()
@@ -804,6 +855,7 @@ def api_admin_reports():
 
 @app.route("/api/transactions/<int:tid>", methods=["GET"])
 def api_transaction_by_id(tid: int):
+    # URL-də id başqa istifadəçinə məxsus olsa, WHERE user_id = sessiya ilə kəsilir (IDOR mühafizəsi)
     """Tək sifariş — IDOR düzəlişi: yalnız o istifadəçinin öz sifarişi yoxlanılır."""
     if "user_id" not in session:
         return jsonify({"ok": False, "error": "Daxil olun."}), 401
@@ -834,6 +886,7 @@ def api_transaction_by_id(tid: int):
 
 @app.route("/uploads/<path:filename>")
 def serve_uploads(filename: str):
+    # Yüklənmiş fayllar UPLOAD_DIR-dən birbaşa URL ilə verilir (şəkil/PDF üçün)
     return send_from_directory(UPLOAD_DIR, filename)
 
 
@@ -858,6 +911,7 @@ def api_health():
 @app.route("/", defaults={"path": "login.html"})
 @app.route("/<path:path>")
 def serve_file(path):
+    # Statik fayllar: ../ ilə kataloqdan çıxmaq (path traversal) əleyhinə yoxlama
     if path.startswith("api/"):
         return "Tapılmadı", 404
     allowed_suffix = {".html", ".css", ".js", ".jpg", ".jpeg", ".png", ".ico", ".svg"}
